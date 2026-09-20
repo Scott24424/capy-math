@@ -99,6 +99,49 @@ describe('generateProblem — 모든 조합이 규칙을 지킨다', () => {
     expect(Number.isInteger(p.a * p.b)).toBe(true)
   })
 
+  // fallback 경로(300회 상한 초과)에서도 카테고리 범위 불변식과 RT2-2("two-by-two의 b는
+  // 절대 일의 자리가 0이면 안 된다")가 무조건 지켜져야 한다. sample()이 조건에 맞는
+  // 후보를 못 찾고 마지막 후보를 그대로 돌려주면 이 불변식이 깨질 수 있으므로,
+  // 병적인 rng로 모든 (category, difficulty) 조합을 직접 확인한다.
+  describe('병적인 rng로도 카테고리 불변식은 절대 깨지지 않는다', () => {
+    for (const rngValue of [0, 0.999999]) {
+      for (const category of CATEGORIES) {
+        for (const difficulty of DIFFICULTIES) {
+          it(`${category} / ${difficulty} — rng() ≡ ${rngValue}`, () => {
+            const pathological = () => rngValue
+            const p = generateProblem(category, difficulty, pathological)
+
+            if (category === 'times-table') {
+              expect(p.a).toBeGreaterThanOrEqual(2)
+              expect(p.a).toBeLessThanOrEqual(9)
+              expect(p.b).toBeGreaterThanOrEqual(2)
+              expect(p.b).toBeLessThanOrEqual(9)
+            }
+            if (category === 'two-by-one') {
+              expect(p.a).toBeGreaterThanOrEqual(10)
+              expect(p.a).toBeLessThanOrEqual(99)
+              expect(p.b).toBeGreaterThanOrEqual(2)
+              expect(p.b).toBeLessThanOrEqual(9)
+            }
+            if (category === 'three-by-one') {
+              expect(p.a).toBeGreaterThanOrEqual(100)
+              expect(p.a).toBeLessThanOrEqual(999)
+              expect(p.b).toBeGreaterThanOrEqual(2)
+              expect(p.b).toBeLessThanOrEqual(9)
+            }
+            if (category === 'two-by-two') {
+              expect(p.a).toBeGreaterThanOrEqual(10)
+              expect(p.a).toBeLessThanOrEqual(99)
+              expect(p.b).toBeGreaterThanOrEqual(10)
+              expect(p.b).toBeLessThanOrEqual(99)
+              expect(p.b % 10).not.toBe(0)
+            }
+          })
+        }
+      }
+    }
+  })
+
   it('카테고리마다 한국어 이름이 있다', () => {
     for (const c of CATEGORIES) {
       expect(typeof CATEGORY_LABELS[c]).toBe('string')
