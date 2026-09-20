@@ -18,3 +18,43 @@ body {
   user-select: none;
 }
 #app { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+.g-row { display: flex; justify-content: center; gap: 4px; }
+.g-symbol { width: 28px; text-align: right; font: 600 24px/44px ui-monospace, Menlo, monospace; }
+.g-cell {
+  width: 44px; height: 44px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font: 600 24px/1 ui-monospace, Menlo, monospace;
+}
+.g-given { color: var(--ink); }
+.g-empty { }
+.g-input { border: 2px solid var(--line); background: var(--card); }
+.g-carry {
+  width: 30px; height: 30px; margin: 0 7px; font-size: 15px;
+  border: 2px dashed var(--line); background: var(--card);
+}
+.g-row.g-carry { height: 32px; }
+.g-cell.is-filled { color: var(--ink); }
+.g-cell.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(240, 145, 47, .22);
+  background: #fffaf2;
+}
+.g-cell.is-wrong { border-color: var(--bad); background: #fdf0ef; animation: shake .3s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+.g-line { height: 3px; background: var(--ink); border-radius: 2px; margin: 4px auto; width: 70%; }
+.g-equation { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 28px; }
+.g-equation .g-cell { width: 90px; }
+
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 240px; margin: 20px auto 0; }
+.keypad button {
+  height: 52px; font-size: 22px; font-weight: 600;
+  border: 2px solid var(--line); border-radius: 10px;
+  background: var(--card); color: var(--ink);
+}
+.keypad button:active { background: #f7f1e8; }
+.keypad button.wide { grid-column: span 1; }
