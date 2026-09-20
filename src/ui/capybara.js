@@ -7,7 +7,9 @@ export const SERIES = [
 ]
 
 export function clampLevel(level) {
-  const n = Math.floor(Number(level))
+  const num = Number(level)
+  if (num === Infinity) return 50
+  const n = Math.floor(num)
   if (!Number.isFinite(n)) return 1
   return Math.min(Math.max(n, 1), 50)
 }
