@@ -132,3 +132,25 @@ body {
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
 .badge { background: #fff6e8; border: 1px solid #f3d7ae; color: #7a5b2c; border-radius: 20px; padding: 5px 12px; font-size: 12px; }
 .muted { color: var(--muted); font-size: 13px; }
+
+.result-capy { position: relative; display: inline-block; line-height: 0; }
+.result-capy.is-level-up .capy { animation: capy-pop .5s ease-out; }
+.result-capy .spark {
+  position: absolute; font-size: 15px; opacity: 0; pointer-events: none;
+  animation: spark-pop .5s ease-out forwards;
+}
+.result-series { font-size: 13px; font-weight: 800; color: var(--accent); margin-top: 4px; }
+
+@keyframes capy-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.16); }
+  60% { transform: scale(.96); }
+  100% { transform: scale(1); }
+}
+@keyframes spark-pop {
+  0% { opacity: 0; transform: scale(.4) translateY(0); }
+  45% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.05) translateY(-10px); }
+}
+
+.records-streak { color: var(--muted); font-size: 13px; margin: -6px 0 12px; }

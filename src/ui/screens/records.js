@@ -16,6 +16,7 @@ const mmss = (ms) => {
 export function renderRecords(container, state, { onBack }) {
   const level = clampLevel(state.level)
   const badges = Array.isArray(state.badges) ? state.badges : []
+  const streakDays = Number.isFinite(state.streakDays) ? Math.max(0, state.streakDays) : 0
 
   const capybaras = Array.from({ length: 50 }, (_, i) => {
     const lv = i + 1
@@ -48,6 +49,7 @@ export function renderRecords(container, state, { onBack }) {
   container.innerHTML = `
     <div class="records">
       <h2>기록실</h2>
+      <p class="records-streak">🔥 연속 출석 ${streakDays}일째</p>
       <div class="capy-grid">${capybaras}</div>
       <table class="records-table">
         <thead><tr><th>카테고리</th><th>푼 문제</th><th>정확도</th><th>최고 기록</th></tr></thead>

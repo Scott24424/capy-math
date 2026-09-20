@@ -1,10 +1,25 @@
-import { capybaraSvg, clampLevel } from '../capybara.js'
+import { capybaraSvg, clampLevel, seriesOf } from '../capybara.js'
 import { xpForLevel, MAX_LEVEL, BADGES } from '../../core/progress.js'
 
 const mmss = (ms) => {
   const total = Math.round(Math.max(0, Number(ms) || 0) / 1000)
   return `${Math.floor(total / 60)}분 ${String(total % 60).padStart(2, '0')}초`
 }
+
+/** 한글 음절의 받침 유무로 '을/를' 조사를 고른다 (progress.js 의 것과 같은 규칙) */
+function objectParticle(word) {
+  const code = word.charCodeAt(word.length - 1) - 0xac00
+  if (code < 0 || code > 11171) return '을'
+  return code % 28 === 0 ? '를' : '을'
+}
+
+/** 새 계열로 넘어갈 때 반짝일 4개의 반짝임 — 위치와 지연을 조금씩 흩어 자연스럽게 만든다 */
+const SPARKLES = [
+  { top: '-6%', left: '4%', delay: '0s' },
+  { top: '2%', left: '82%', delay: '.08s' },
+  { top: '62%', left: '-4%', delay: '.16s' },
+  { top: '70%', left: '86%', delay: '.05s' }
+]
 
 /**
  * 결과 화면. "한 판 더"가 가장 눈에 띄어야 한다.
@@ -27,10 +42,20 @@ export function renderResult(container, summary, xpInfo, state, { onAgain, onRev
   const newBadges = Array.isArray(xpInfo?.newBadges) ? xpInfo.newBadges : []
   const badgeLabels = newBadges.map(id => BADGES[id]?.label ?? id)
 
+  // 레벨업 순간에만 축하 연출을 붙인다 — leveledUp 이 false 면 평소와 똑같다.
+  // 계열이 바뀌면(예: 풀밭 → 온천) 새 카피바라를 만났다는 걸 이름으로 알려준다.
+  const newSeries = leveledUp && seriesOf(fromLevel).name !== seriesOf(level).name
+  const seriesName = seriesOf(level).name
+
   container.innerHTML = `
     <div class="result">
       <div class="result-top">
-        ${capybaraSvg(level, 110)}
+        <div class="result-capy${leveledUp ? ' is-level-up' : ''}">
+          ${capybaraSvg(level, 110)}
+          ${leveledUp ? SPARKLES.map(s =>
+            `<span class="spark" style="top:${s.top};left:${s.left};animation-delay:${s.delay}">✨</span>`
+          ).join('') : ''}
+        </div>
         <div class="result-text">
           <div class="result-score">${correct} / ${total} 맞았어요!</div>
           <div class="result-time">${mmss(summary?.elapsedMs)}${summary?.best ? ' · 최고 기록이에요! 🎉' : ''}</div>
@@ -39,6 +64,7 @@ export function renderResult(container, summary, xpInfo, state, { onAgain, onRev
             경험치 +${gained}
             ${leveledUp ? ` · 레벨 ${fromLevel} → ${level}!` : ''}
           </div>
+          ${newSeries ? `<div class="result-series">${seriesName}${objectParticle(seriesName)} 만났어요!</div>` : ''}
           ${badgeLabels.length > 0
             ? `<div class="result-badges">새 배지: ${badgeLabels.join(', ')}</div>` : ''}
         </div>
