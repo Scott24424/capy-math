@@ -47,6 +47,19 @@ export function buildSet(state, category, rng = Math.random) {
 }
 
 export function finishSet(prevState, results, elapsedMs, { partial = false } = {}) {
+  // 결과가 하나도 없으면(아이가 문제를 한 개도 안 끝내고 나갔다) 아무 것도
+  // 하지 않는다 — 특히 연속 출석을 오늘 날짜로 세워서는 안 된다. 이 계약은
+  // 호출하는 쪽(app.js의 onExit)이 애초에 finishSet을 안 부르는 것에만
+  // 기대면 안 된다: 나중에 새 호출부(자동 저장, 이어하기 등)가 생겼을 때
+  // 그 규칙을 몰라도 여기서 항상 지켜지도록 함수 자체의 불변식으로 둔다.
+  if (results.length === 0) {
+    return {
+      state: structuredClone(prevState),
+      summary: summarize(results, elapsedMs),
+      xpInfo: { gained: 0, fromLevel: prevState.level, leveledUp: false, newBadges: [] }
+    }
+  }
+
   const state = structuredClone(prevState)
   const summary = summarize(results, elapsedMs)
   const category = results[0]?.category

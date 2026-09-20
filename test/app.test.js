@@ -217,10 +217,33 @@ describe('finishSet', () => {
   })
 })
 
-describe('finishSet — 빈 결과를 넘기면 왜 위험한지 (계약: app.js는 이 경우 finishSet을 아예 부르지 않는다)', () => {
-  it('finishSet(state, [], ...)는 그 자체로는 streak를 세워 버린다 — 그래서 onExit는 results.length===0일 때 finishSet 호출을 건너뛴다', () => {
-    const { state } = finishSet(defaultState(), [], 0, { partial: true })
-    expect(state.streakDays).toBe(1)
+describe('finishSet — 빈 결과는 함수 자체의 불변식으로 완전한 무동작이다', () => {
+  // 이 계약은 호출하는 쪽(app.js의 onExit)이 "안 부르기"로만 지키는 게
+  // 아니라 finishSet 스스로가 지킨다 — 나중에 생길 다른 호출부가 이 규칙을
+  // 몰라도 안전하도록.
+  it('결과가 빈 배열이면 연속 출석을 오늘 날짜로 세우지 않는다', () => {
+    const before = defaultState()
+    const { state } = finishSet(before, [], 0, { partial: true })
+    expect(state.streakDays).toBe(before.streakDays)
+    expect(state.lastPlayedDate).toBe(before.lastPlayedDate)
+  })
+
+  it('결과가 빈 배열이면 상태를 그대로 돌려주고(깊은 동일성) 원본도 바꾸지 않는다', () => {
+    const before = defaultState()
+    const snapshot = structuredClone(before)
+    const { state, summary, xpInfo } = finishSet(before, [], 0)
+    expect(state).toEqual(snapshot)
+    expect(before).toEqual(snapshot)
+    expect(summary.total).toBe(0)
+    expect(xpInfo).toEqual({ gained: 0, fromLevel: before.level, leveledUp: false, newBadges: [] })
+  })
+
+  it('partial 여부와 상관없이 무동작이다', () => {
+    const before = defaultState()
+    const withPartial = finishSet(before, [], 0, { partial: true }).state
+    const withoutPartial = finishSet(before, [], 0, { partial: false }).state
+    expect(withPartial).toEqual(before)
+    expect(withoutPartial).toEqual(before)
   })
 })
 
