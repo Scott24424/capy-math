@@ -59,4 +59,25 @@ describe('createKeypad', () => {
     expect(onDigit).toHaveBeenCalledTimes(1)
     expect(onDigit).toHaveBeenCalledWith('9')
   })
+
+  it('새 숫자판이 붙은 뒤 예전 인스턴스의 destroy 를 불러도 살아있는 숫자판은 멀쩡하다', () => {
+    const container = Object.assign(new EventTarget(), { innerHTML: '' })
+    const onDigit = vi.fn()
+
+    const first = createKeypad(container, { onDigit, onBackspace: vi.fn(), onEnter: vi.fn() })
+    // createKeypad 자체가 이미 first 를 지우고 새로 붙이지만, 여기서는 그 뒤에도
+    // "이전 인스턴스를 들고 있던 낡은 참조"가 늦게 destroy 를 부르는 상황을 재현한다.
+    createKeypad(container, { onDigit, onBackspace: vi.fn(), onEnter: vi.fn() })
+
+    first.destroy()
+
+    expect(container.innerHTML).not.toBe('')
+
+    const event = new Event('keydown')
+    event.key = '7'
+    fakeWindow.dispatchEvent(event)
+
+    expect(onDigit).toHaveBeenCalledTimes(1)
+    expect(onDigit).toHaveBeenCalledWith('7')
+  })
 })

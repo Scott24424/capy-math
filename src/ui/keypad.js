@@ -36,10 +36,15 @@ export function createKeypad(container, { onDigit, onBackspace, onEnter }) {
 
   const api = {
     destroy() {
+      // 이 인스턴스가 더 이상 container 의 현재 숫자판이 아니면(예: 새 숫자판이
+      // 이미 그 위에 붙었는데 낡은 참조로 뒤늦게 destroy 가 불렸다면) 아무 것도
+      // 하지 않는다 — 그렇지 않으면 살아 있는 숫자판의 버튼만 지워지고 리스너는
+      // 그대로 남아, 키보드는 되는데 클릭만 죽는 상태가 된다.
+      if (instances.get(container) !== api) return
       container.removeEventListener('click', onClick)
       window.removeEventListener('keydown', onKeydown)
       container.innerHTML = ''
-      if (instances.get(container) === api) instances.delete(container)
+      instances.delete(container)
     }
   }
 
