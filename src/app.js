@@ -166,7 +166,14 @@ export function startApp(container) {
   const goHome = () => {
     renderHome(container, state, {
       onStart: (category) => startSet(category),
-      onRecords: () => renderRecords(container, state, { onBack: goHome })
+      onRecords: () => renderRecords(container, state, {
+        onBack: goHome,
+        onImport: (newState) => {
+          state = newState
+          persist()
+          goHome()
+        }
+      })
     })
   }
 

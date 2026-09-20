@@ -156,3 +156,10 @@ body {
 }
 
 .records-streak { color: var(--muted); font-size: 13px; margin: -6px 0 12px; }
+
+.records-transfer {
+  margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--line);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.records-transfer .muted { flex-basis: 100%; margin: 0 0 2px; }
+.records-transfer .btn-ghost { padding: 8px 14px; font-size: 13px; }

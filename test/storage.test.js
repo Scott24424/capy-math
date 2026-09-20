@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { defaultState, loadState, saveState, STORAGE_KEY, SCHEMA_VERSION } from '../src/storage.js'
+import {
+  defaultState, loadState, saveState, STORAGE_KEY, SCHEMA_VERSION,
+  buildExport, parseImport, EXPORT_KIND
+} from '../src/storage.js'
 import { CATEGORIES } from '../src/core/problem.js'
 import { buildSet, finishSet } from '../src/app.js'
 
@@ -189,5 +192,108 @@ describe('saveState / loadState', () => {
       expect(s.recentByCategory['two-by-one']).toEqual([])
       runsFine(s)
     })
+  })
+})
+
+describe('진도 내보내기 / 불러오기', () => {
+  /** 몇 판 플레이해 여러 필드가 채워진 실제 상태 하나를 만든다 */
+  const populatedState = () => {
+    let state = { ...defaultState(), level: 12, xp: 340, streakDays: 5, lastPlayedDate: '2026-09-20' }
+    const set = buildSet(state, 'two-by-one')
+    const results = set.map((p, i) => ({
+      problemId: p.id, category: p.category, difficulty: p.difficulty,
+      a: p.a, b: p.b, correct: i !== 0, usedHint: i === 1, isReview: p.isReview === true
+    }))
+    state = finishSet(state, results, 45000).state
+    return state
+  }
+
+  it('내보낸 봉투는 kind 와 schemaVersion 을 담는다', () => {
+    const envelope = buildExport(defaultState())
+    expect(envelope.kind).toBe(EXPORT_KIND)
+    expect(envelope.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(typeof envelope.exportedAt).toBe('string')
+  })
+
+  it('실제로 채워진 상태를 내보내고 불러오면 완전히 같은 상태가 된다', () => {
+    const state = populatedState()
+    const envelope = buildExport(state)
+    const result = parseImport(envelope)
+    expect(result.ok).toBe(true)
+    expect(result.state).toEqual(state)
+  })
+
+  it('봉투는 JSON.stringify/parse 를 그대로 통과한다', () => {
+    const state = populatedState()
+    const envelope = buildExport(state)
+    const roundTripped = JSON.parse(JSON.stringify(envelope))
+    expect(roundTripped).toEqual(envelope)
+
+    const result = parseImport(roundTripped)
+    expect(result.ok).toBe(true)
+    expect(result.state).toEqual(state)
+  })
+
+  it('JSON 이 아닌 값(원시 타입)은 거부하고 이유를 알려준다', () => {
+    for (const bad of [null, undefined, 42, '문자열', true, []]) {
+      const result = parseImport(bad)
+      expect(result.ok).toBe(false)
+      expect(typeof result.reason).toBe('string')
+    }
+  })
+
+  it('이 앱이 만든 봉투가 아니면(kind 불일치) 거부한다', () => {
+    const state = populatedState()
+    const notOurs = { schemaVersion: SCHEMA_VERSION, state, exportedAt: 'x' }
+    const result = parseImport(notOurs)
+    expect(result.ok).toBe(false)
+    expect(result.reason).toBe('wrong-kind')
+  })
+
+  it('스키마 버전이 다르면(더 오래됐든 새것이든) 거부한다', () => {
+    const state = populatedState()
+    for (const schemaVersion of [SCHEMA_VERSION - 1, SCHEMA_VERSION + 1, 999]) {
+      const result = parseImport({ kind: EXPORT_KIND, schemaVersion, exportedAt: 'x', state })
+      expect(result.ok).toBe(false)
+      expect(result.reason).toBe('wrong-version')
+    }
+  })
+
+  it('봉투 자체는 맞는데 안의 state 가 깨져 있으면(버전 없음) 거부한다', () => {
+    const envelope = { kind: EXPORT_KIND, schemaVersion: SCHEMA_VERSION, exportedAt: 'x', state: { level: 30 } }
+    const result = parseImport(envelope)
+    expect(result.ok).toBe(false)
+    expect(result.reason).toBe('invalid-state')
+  })
+
+  it('state 안 필드 하나가 깨져 있어도 loadState 와 같은 방식으로 그 필드만 복구되고, 던지지 않는다', () => {
+    // test/storage.test.js 위쪽의 "필드별 손상 방어"와 같은 손상 케이스를 재사용한다.
+    const corruptCases = [
+      { reviewQueue: 42 },
+      { reviewQueue: 'x' },
+      { reviewQueue: [null, { id: '20x3', category: 'two-by-one', a: 20, b: 3, streak: 0 }] },
+      { difficultyByCategory: { 'times-table': 'medium' } },
+      { level: 'x' },
+      { xp: 'x' },
+      { bestByCategory: { 'two-by-one': 'x' } },
+      { recentByCategory: { 'two-by-one': 'x' } }
+    ]
+    for (const corruption of corruptCases) {
+      const state = { ...defaultState(), ...corruption }
+      const envelope = { kind: EXPORT_KIND, schemaVersion: SCHEMA_VERSION, exportedAt: 'x', state }
+      let result
+      expect(() => { result = parseImport(envelope) }).not.toThrow()
+      expect(result.ok).toBe(true)
+      // 같은 손상을 loadState 에 흘려보낸 결과와 동일해야 한다(같은 검증을 공유)
+      const viaLoad = loadState({ getItem: () => JSON.stringify({ version: SCHEMA_VERSION, ...corruption }) })
+      expect(result.state).toEqual(viaLoad)
+    }
+  })
+
+  it('실패해도 원래 상태를 바꾸지 않는다(순수 함수 — 인자를 변형하지 않는다)', () => {
+    const state = populatedState()
+    const before = structuredClone(state)
+    parseImport({ kind: 'not-ours', schemaVersion: SCHEMA_VERSION, state })
+    expect(state).toEqual(before)
   })
 })

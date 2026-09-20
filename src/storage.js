@@ -83,14 +83,23 @@ function merge(saved) {
   return out
 }
 
+/**
+ * 파싱된 값(JSON.parse 결과)이 이 앱의 상태로 쓸 만한지 검사해 채워 돌려준다.
+ * 봉투(버전 등) 자체가 안 맞으면 null. loadState 와 진도 불러오기가 이 한 함수를
+ * 같이 써서, "저장에서 읽기"와 "파일에서 불러오기"가 서로 다른 검증을 갖지 않는다.
+ */
+function validateState(parsed) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+  if (parsed.version !== SCHEMA_VERSION) return null
+  return merge(parsed)
+}
+
 export function loadState(store = globalThis.localStorage) {
   try {
     const raw = store?.getItem(STORAGE_KEY)
     if (!raw) return defaultState()
     const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return defaultState()
-    if (parsed.version !== SCHEMA_VERSION) return defaultState()
-    return merge(parsed)
+    return validateState(parsed) ?? defaultState()
   } catch {
     return defaultState()   // 저장이 막혔거나 값이 깨졌다 — 아이에게 오류를 보이지 않는다
   }
@@ -104,4 +113,41 @@ export function saveState(state, store = globalThis.localStorage) {
   } catch {
     return false
   }
+}
+
+// --- 진도 내보내기 / 불러오기 ---
+// 다른 기기로 진도를 옮기기 위한 파일. localStorage 는 브라우저·주소마다
+// 따로 있어서, GitHub Pages 로 옮기거나 다른 컴퓨터를 쓰면 진도가 안 보인다.
+
+export const EXPORT_KIND = 'capy-math-progress'
+
+/** state 를 담은 봉투를 만든다. kind/schemaVersion 으로 나중에 "이 파일이 맞는지" 알아본다. */
+export function buildExport(state) {
+  return {
+    kind: EXPORT_KIND,
+    schemaVersion: SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
+    state
+  }
+}
+
+/**
+ * 이미 JSON.parse 된 값을 불러오기용으로 검증한다. 실패하면 상태를 하나도
+ * 바꾸지 않도록 { ok: false, reason } 을 돌려준다. 성공하면 { ok: true, state }.
+ * 안의 state 는 loadState 와 똑같은 validateState/merge 를 거치므로, 필드 하나가
+ * 깨져 있어도 그 필드만 기본값으로 되돌아가고 예외는 던지지 않는다.
+ *
+ * schemaVersion 이 지금 버전과 다르면(더 오래됐든 새것이든) 통째로 거부한다 —
+ * 지금은 스키마가 1가지뿐이라 옮겨 줄 마이그레이션 경로가 없고, 어설프게
+ * 맞춰 넣느니 "다시 내보내 주세요" 라고 말하는 편이 안전하다.
+ */
+export function parseImport(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ok: false, reason: 'not-object' }
+  }
+  if (value.kind !== EXPORT_KIND) return { ok: false, reason: 'wrong-kind' }
+  if (value.schemaVersion !== SCHEMA_VERSION) return { ok: false, reason: 'wrong-version' }
+  const state = validateState(value.state)
+  if (!state) return { ok: false, reason: 'invalid-state' }
+  return { ok: true, state }
 }
