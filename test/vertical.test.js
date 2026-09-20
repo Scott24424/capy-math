@@ -82,11 +82,17 @@ describe('buildVertical', () => {
     expect(at(v.cells, 'product', 0, 1).value).toBe(0)
   })
 
-  it('모든 칸에 아이가 읽을 힌트 문구가 있다', () => {
-    const v = buildVertical(47, 36)
-    for (const c of v.cells) {
-      expect(typeof c.hint).toBe('string')
-      expect(c.hint.length).toBeGreaterThan(0)
+  it('모든 칸에 아이가 읽을 힌트 문구가 있고, 조사가 문법에 맞는다', () => {
+    // 모음 받침 없는 수(2,4,5,9로 끝남) 바로 뒤에 '이에요'나 '을'이 붙으면 틀린 문법이다.
+    // (올바르면 '예요'나 '를'이 붙는다.)
+    const wrongParticle = /[0-9]*[2459](이에요|을)/
+    for (const [a, b] of [[47, 36], [99, 99], [405, 7], [10, 10], [40, 6], [87, 69], [23, 40]]) {
+      const v = buildVertical(a, b)
+      for (const c of v.cells) {
+        expect(typeof c.hint).toBe('string')
+        expect(c.hint.length).toBeGreaterThan(0)
+        expect(c.hint).not.toMatch(wrongParticle)
+      }
     }
   })
 
@@ -95,6 +101,14 @@ describe('buildVertical', () => {
       const ids = buildVertical(a, b).cells.map(c => c.id)
       expect(new Set(ids).size).toBe(ids.length)
     }
+  })
+
+  it('23 × 40 — b가 0으로 끝나면 첫 부분곱은 0인 칸 두 개다', () => {
+    const v = buildVertical(23, 40)
+    expect(v.product).toBe(920)
+    expect(v.partials[0].value).toBe(0)
+    expect(at(v.cells, 'product', 0, 0).value).toBe(0)
+    expect(at(v.cells, 'product', 0, 1).value).toBe(0)
   })
 })
 
@@ -109,8 +123,16 @@ describe('buildAnswerOnly', () => {
 
 describe('buildLayout', () => {
   it('구구단은 답 한 칸, 나머지는 세로셈이다', () => {
-    expect(buildLayout({ category: 'times-table', a: 7, b: 8 }).mode).toBe('answer')
-    expect(buildLayout({ category: 'two-by-one', a: 47, b: 3 }).mode).toBe('vertical')
-    expect(buildLayout({ category: 'two-by-two', a: 47, b: 36 }).mode).toBe('vertical')
+    const times = buildLayout({ category: 'times-table', a: 7, b: 8 })
+    expect(times.mode).toBe('answer')
+    expect(times.product).toBe(56)
+
+    const twoByOne = buildLayout({ category: 'two-by-one', a: 47, b: 3 })
+    expect(twoByOne.mode).toBe('vertical')
+    expect(twoByOne.product).toBe(141)
+
+    const twoByTwo = buildLayout({ category: 'two-by-two', a: 47, b: 36 })
+    expect(twoByTwo.mode).toBe('vertical')
+    expect(twoByTwo.product).toBe(1692)
   })
 })
