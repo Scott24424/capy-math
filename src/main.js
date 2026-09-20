@@ -1,3 +1,4 @@
 import './styles.css'
+import { startApp } from './app.js'
 
-document.getElementById('app').textContent = '곱셈 카피바라'
+startApp(document.getElementById('app'))
