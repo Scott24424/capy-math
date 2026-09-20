@@ -179,6 +179,49 @@ describe('finishSet', () => {
     expect(after.reviewQueue).toHaveLength(7)
     expect(after.reviewQueue.every(e => e.streak === 1)).toBe(true)
   })
+
+  it('partial: "집으로"로 중간에 나온 세트는 끝낸 문제만큼만 경험치를 주고 완주 보너스는 없다', () => {
+    // 4문제만 끝내고 나갔다고 가정 — 3개 정답, 1개 오답
+    const four = tenCorrect.slice(0, 4).map((r, i) => (i === 3 ? { ...r, correct: false } : r))
+    const { state, xpInfo, summary } = finishSet(defaultState(), four, 40000, { partial: true })
+
+    // 세트 완주 보너스(+5)도, 만점 보너스(+10, 애초에 만점도 아니지만)도 없다 —
+    // 정답 3개만큼의 문제 경험치(5×3=15)뿐이다.
+    expect(xpInfo.gained).toBe(3 * 5)
+    expect(summary.total).toBe(4)
+    expect(summary.correct).toBe(3)
+  })
+
+  it('partial: bestByCategory와 perfectSets를 건드리지 않는다', () => {
+    const four = tenCorrect.slice(0, 4) // 4문제 전부 정답
+    const { state, summary } = finishSet(defaultState(), four, 40000, { partial: true })
+    expect(state.bestByCategory['two-by-one']).toBeNull()
+    expect(state.perfectSets).toBe(0)
+    expect(summary.best).toBe(false)
+  })
+
+  it('partial: recentByCategory와 복습 주머니는 (진짜 답이므로) 그대로 반영된다', () => {
+    const four = tenCorrect.slice(0, 4).map((r, i) => (i === 3 ? { ...r, correct: false } : r))
+    const { state } = finishSet(defaultState(), four, 40000, { partial: true })
+    expect(state.recentByCategory['two-by-one']).toEqual([true, true, true, false])
+    expect(state.solvedByCategory['two-by-one']).toBe(4)
+    expect(state.reviewQueue).toHaveLength(1)
+  })
+
+  it('partial: 그래도 연속 출석과 레벨/경험치는 정상적으로 오른다', () => {
+    const two = tenCorrect.slice(0, 2)
+    const before = defaultState()
+    const { state } = finishSet(before, two, 10000, { partial: true })
+    expect(state.streakDays).toBe(1)
+    expect(state.xp).toBeGreaterThan(before.xp)
+  })
+})
+
+describe('finishSet — 빈 결과를 넘기면 왜 위험한지 (계약: app.js는 이 경우 finishSet을 아예 부르지 않는다)', () => {
+  it('finishSet(state, [], ...)는 그 자체로는 streak를 세워 버린다 — 그래서 onExit는 results.length===0일 때 finishSet 호출을 건너뛴다', () => {
+    const { state } = finishSet(defaultState(), [], 0, { partial: true })
+    expect(state.streakDays).toBe(1)
+  })
 })
 
 describe('today (현지 날짜)', () => {

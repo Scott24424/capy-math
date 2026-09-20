@@ -46,7 +46,7 @@ export function buildSet(state, category, rng = Math.random) {
   return set.sort(() => rng() - 0.5)
 }
 
-export function finishSet(prevState, results, elapsedMs) {
+export function finishSet(prevState, results, elapsedMs, { partial = false } = {}) {
   const state = structuredClone(prevState)
   const summary = summarize(results, elapsedMs)
   const category = results[0]?.category
@@ -56,6 +56,14 @@ export function finishSet(prevState, results, elapsedMs) {
   // 그 세트의 모든 문제가 isReview 라는 것으로 판별한다(정식 세트는 복습
   // 문제가 최대 3개까지만 섞이므로 절대 전부가 isReview 일 수 없다).
   const isReplaySet = results.length > 0 && results.every(r => r.isReview)
+
+  // "집으로" 로 중간에 나온 세트(partial)도 10문제를 다 못 채웠다는 점에서
+  // isReplaySet 과 같은 처지다 — 최고 기록/만점 보너스/세트 완주 보너스는
+  // 주면 안 된다. 다만 복습 세트와 달리 여기 담긴 답은 아이가 방금 실제로
+  // 낸 진짜 답이므로(공개돼서 베낀 게 아니다), 난이도 자동 조절의 재료인
+  // recentByCategory 에는 그대로 반영해야 한다. 그래서 "완주 취급 여부"와
+  // "최근 성적 반영 여부"를 서로 다른 조건으로 나눈다.
+  const isIncompleteSet = isReplaySet || partial
 
   const streak = updateStreak(
     { streakDays: state.streakDays, lastPlayedDate: state.lastPlayedDate },
@@ -70,10 +78,15 @@ export function finishSet(prevState, results, elapsedMs) {
         isReview: r.isReview, usedHint: r.usedHint
       })
     : 0), 0)
-  gained += setBonus({
-    allCorrect: !isReplaySet && summary.allCorrect,
-    streakDays: state.streakDays
-  })
+  // 세트 완주 +5 는 "10문제를 끝까지 풀었다"는 완주 보너스다. partial 세트는
+  // 명백히 완주가 아니므로 통째로 주지 않는다(기존 복습 전용 세트의 계산 방식은
+  // 이 변경과 무관하게 그대로 둔다 — 그쪽은 이미 검토를 마친 별개의 결정이다).
+  if (!partial) {
+    gained += setBonus({
+      allCorrect: !isReplaySet && summary.allCorrect,
+      streakDays: state.streakDays
+    })
+  }
 
   const fromLevel = state.level
   const applied = applyXp({ level: state.level, xp: state.xp }, gained)
@@ -81,7 +94,7 @@ export function finishSet(prevState, results, elapsedMs) {
   state.xp = applied.xp
 
   state.setsPlayed += 1
-  if (!isReplaySet && summary.allCorrect) state.perfectSets += 1
+  if (!isIncompleteSet && summary.allCorrect) state.perfectSets += 1
   if (category && category !== 'times-table') {
     state.verticalSolved += results.filter(r => r.correct).length
   }
@@ -110,7 +123,7 @@ export function finishSet(prevState, results, elapsedMs) {
   }
 
   const best = state.bestByCategory[category]
-  const isBest = !isReplaySet && category && (!best ||
+  const isBest = !isIncompleteSet && category && (!best ||
     summary.correct > best.correct ||
     (summary.correct === best.correct && elapsedMs < best.elapsedMs))
   if (isBest) state.bestByCategory[category] = { correct: summary.correct, elapsedMs }
@@ -165,6 +178,18 @@ export function startApp(container) {
           }))),
           onHome: goHome
         })
+      },
+      // 아이가 세트를 끝까지 안 풀고 "집으로"를 눌렀을 때. 한 문제도 안 끝냈으면
+      // (results가 비어 있으면) 아무 것도 하지 않는다 — 연속 출석/카운터를
+      // 건드리지 않고 그냥 집 화면으로 돌아간다. 하나라도 끝냈으면 그만큼만
+      // partial 세트로 채점한다(최고 기록/만점 보너스/세트 완주 보너스 없이).
+      onExit: (results, elapsedMs) => {
+        if (results.length > 0) {
+          const outcome = finishSet(state, results, elapsedMs, { partial: true })
+          state = outcome.state
+          persist()
+        }
+        goHome()
       }
     })
   }

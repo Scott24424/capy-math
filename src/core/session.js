@@ -58,8 +58,15 @@ export function submit(session, input) {
   return { ...verdict, problemDone, setDone: session.done }
 }
 
-export function sessionResults(session) {
-  return session.problems.map((p, i) => ({
+// completedOnly: true 면 아직 끝나지 않은 문제(지금 풀고 있거나 손도 안 댄
+// 문제)는 빼고, 실제로 칸을 다 채운 문제까지만 돌려준다. session.index 는
+// 문제 하나가 끝날 때만 올라가므로(session.js 의 submit 참고) 이 경계가
+// "완주한 문제 수"와 정확히 같다. 세트를 다 풀었을 때(session.done)는
+// session.index === problems.length 라 이 옵션이 있든 없든 결과가 같다 —
+// 기존 onSetDone 호출부는 손대지 않아도 된다.
+export function sessionResults(session, { completedOnly = false } = {}) {
+  const n = completedOnly ? session.index : session.problems.length
+  return session.problems.slice(0, n).map((p, i) => ({
     problemId: p.id,
     category: p.category,
     difficulty: p.difficulty,

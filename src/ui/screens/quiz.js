@@ -11,7 +11,7 @@ import { CATEGORY_LABELS } from '../../core/problem.js'
  * session 에 진행 상태가 들어 있어, 다시 불러도 이어서 그린다.
  */
 export function renderQuiz(container, session, handlers) {
-  const { onProblemWrong, onSetDone } = handlers
+  const { onProblemWrong, onSetDone, onExit } = handlers
   let typed = ''
   let wrongId = null
   let message = ''
@@ -26,6 +26,9 @@ export function renderQuiz(container, session, handlers) {
 
   container.innerHTML = `
     <div class="quiz">
+      <div class="quiz-exit-row">
+        <button class="btn-ghost quiz-exit" id="exit">집으로</button>
+      </div>
       <div class="quiz-progress" id="progress"></div>
       <div class="quiz-title" id="title"></div>
       <div class="quiz-grid" id="grid"></div>
@@ -150,6 +153,15 @@ export function renderQuiz(container, session, handlers) {
 
   let pad = mountKeypad()
   paint()
+
+  // "집으로" — 아이가 세트를 끝까지 안 풀고 나가고 싶을 때의 유일한 출구.
+  // 지금 풀던 문제(완주 못 함)는 빼고, 이미 끝낸 문제까지만 넘긴다.
+  container.querySelector('#exit').addEventListener('click', () => {
+    clearTimeout(wrongTimer)
+    wrongTimer = null
+    pad.destroy()
+    onExit(sessionResults(session, { completedOnly: true }), elapsedMs(session))
+  })
 
   return {
     destroy() {

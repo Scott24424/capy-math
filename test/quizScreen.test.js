@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderQuiz } from '../src/ui/screens/quiz.js'
-import { createSession } from '../src/core/session.js'
+import { createSession, submit } from '../src/core/session.js'
 
 // renderQuiz 는 매 호출마다 container.innerHTML 을 통째로 새로 쓰므로, #pad 도
 // 매번 새 노드가 된다. keypad.js 내부의 WeakMap 방어는 "같은 노드에 두 번 붙는
@@ -132,5 +132,75 @@ describe('renderQuiz 같은 숫자 겹눌림 억제', () => {
     pressOne()
 
     expect(session.cellIndex).toBe(2)
+  })
+})
+
+describe('renderQuiz "집으로" 출구', () => {
+  let fakeWindow
+
+  beforeEach(() => {
+    fakeWindow = new FakeWindow()
+    vi.stubGlobal('window', fakeWindow)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const twoProblems = [
+    { id: '7x8', category: 'times-table', difficulty: 'normal', a: 7, b: 8 },
+    { id: '6x6', category: 'times-table', difficulty: 'normal', a: 6, b: 6 }
+  ]
+
+  it('아무 문제도 안 끝내고 나가면 onExit이 빈 배열을 받는다', () => {
+    const session = createSession(twoProblems)
+    const container = new FakeElement()
+    let received = null
+    renderQuiz(container, session, {
+      onProblemWrong: () => {}, onSetDone: () => {},
+      onExit: (results) => { received = results }
+    })
+
+    container.querySelector('#exit')._listeners.click[0]()
+
+    expect(received).toEqual([])
+  })
+
+  it('한 문제를 끝내고 나가면 onExit이 그 한 문제만 받는다(지금 푸는 중인 두 번째 문제는 안 준다)', () => {
+    const session = createSession(twoProblems)
+    const container = new FakeElement()
+    let received = null
+    renderQuiz(container, session, {
+      onProblemWrong: () => {}, onSetDone: () => {},
+      onExit: (results) => { received = results }
+    })
+
+    // 구구단은 한 칸이라 한 번에 문제가 끝난다
+    submit(session, 56)
+    // renderQuiz 는 submit을 자기 commit() 안에서 부르므로, 여기선 세션에 직접
+    // submit해 진행 상태를 흉내낸 뒤(paint 갱신은 이 테스트의 관심사가 아니다)
+    // 나가기 버튼을 누른다.
+    container.querySelector('#exit')._listeners.click[0]()
+
+    expect(received).toHaveLength(1)
+    expect(received[0].problemId).toBe('7x8')
+  })
+
+  it('나가기를 누르면 숫자판이 정확히 지워진다 — 이후 같은 컨테이너에 새로 그려도 살아있는 숫자판은 하나뿐이다', () => {
+    const session = createSession(twoProblems)
+    const container = new FakeElement()
+    renderQuiz(container, session, {
+      onProblemWrong: () => {}, onSetDone: () => {}, onExit: () => {}
+    })
+
+    expect(fakeWindow.keydownListenerCount).toBe(1)
+    container.querySelector('#exit')._listeners.click[0]()
+    expect(fakeWindow.keydownListenerCount).toBe(0)
+
+    // 그 자리(집 화면 등)에 새 화면이 그려진 뒤, 아이가 다시 세트를 시작해도
+    // 숫자판 리스너가 겹쳐 쌓이지 않는다
+    const nextSession = createSession(twoProblems)
+    renderQuiz(container, nextSession, { onProblemWrong: () => {}, onSetDone: () => {} })
+    expect(fakeWindow.keydownListenerCount).toBe(1)
   })
 })

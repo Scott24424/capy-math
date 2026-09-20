@@ -63,6 +63,8 @@ body {
 .keypad button:active { background: #f7f1e8; }
 .keypad button.wide { grid-column: span 1; }
 
+.quiz-exit-row { text-align: right; margin-bottom: 8px; }
+.quiz-exit { padding: 6px 14px; font-size: 12px; }
 .quiz-progress { display: flex; gap: 3px; margin-bottom: 14px; }
 .quiz-progress .mark { flex: 1; height: 6px; border-radius: 3px; background: #e9e0d2; }
 .quiz-progress .mark.ok { background: var(--ok); }

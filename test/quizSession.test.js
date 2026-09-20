@@ -91,6 +91,26 @@ describe('submit', () => {
     expect(sessionResults(s)[0].isReview).toBe(true)
   })
 
+  it('completedOnly: 아직 끝나지 않은 문제(지금 푸는 중이거나 손도 안 댄 문제)는 뺀다', () => {
+    const s = createSession(problems) // 47x3(2자리x1자리, 칸 4개: 1,2,4,1), 7x8(구구단)
+    for (const v of [1, 2, 4, 1]) submit(s, v)   // 47x3 을 다 끝낸다
+    expect(sessionResults(s, { completedOnly: true })).toHaveLength(1)
+    expect(sessionResults(s, { completedOnly: true })[0].problemId).toBe('47x3')
+    // 옵션을 안 주면(기본값) 여전히 손도 안 댄 두 번째 문제까지 전부 돌려준다 — 기존 동작 유지
+    expect(sessionResults(s)).toHaveLength(2)
+  })
+
+  it('completedOnly: 아무 문제도 못 끝냈으면 빈 배열이다', () => {
+    const s = createSession(problems)
+    expect(sessionResults(s, { completedOnly: true })).toEqual([])
+  })
+
+  it('completedOnly: 세트를 다 끝내면 옵션이 있든 없든 같은 결과다', () => {
+    const s = createSession([problems[1]])
+    submit(s, 56)
+    expect(sessionResults(s, { completedOnly: true })).toEqual(sessionResults(s))
+  })
+
   it('빈 입력 메시지 문구가 바뀌어도 시도 횟수는 여전히 소모되지 않는다', async () => {
     // grading.js 의 안내 문구를 다른 것으로 바꿔치기해도, session.js 는
     // verdict.blank 구조적 필드만 보고 판단하므로 계약이 깨지지 않아야 한다.
