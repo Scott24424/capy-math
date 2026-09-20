@@ -1,6 +1,6 @@
 import { currentCell, submit, sessionResults, elapsedMs } from '../../core/session.js'
 import { renderGrid } from '../verticalGrid.js'
-import { createKeypad } from '../keypad.js'
+import { createKeypad, destroyKeypad } from '../keypad.js'
 import { CATEGORY_LABELS } from '../../core/problem.js'
 
 /**
@@ -15,6 +15,14 @@ export function renderQuiz(container, session, handlers) {
   let typed = ''
   let wrongId = null
   let message = ''
+  let wrongTimer = null
+  let lastKey = null
+  let lastKeyAt = 0
+
+  // container.innerHTML 을 새로 쓰기 전에, 지금 그 자리에 붙어 있을 수 있는
+  // (이전 renderQuiz 호출이 남긴) 숫자판부터 지운다. #pad 는 매번 새로 만들어지는
+  // 노드라 keypad.js 내부의 WeakMap 방어만으로는 이 경우를 막지 못한다.
+  destroyKeypad(container.querySelector ? container.querySelector('#pad') : null)
 
   container.innerHTML = `
     <div class="quiz">
@@ -40,10 +48,15 @@ export function renderQuiz(container, session, handlers) {
   const paint = () => {
     const problem = session.problems[session.index]
     if (!problem) return
+    // 화면이 이미 다른 화면(풀이 화면 등)으로 바뀌었다면 그릴 자리가 없다 —
+    // 늦게 도착한 setTimeout 콜백 등이 여기로 들어와도 조용히 넘어간다.
+    const titleEl = container.querySelector('#title')
+    if (!titleEl) return
+
     const layout = session.layouts[session.index]
     const cell = currentCell(session)
 
-    container.querySelector('#title').textContent =
+    titleEl.textContent =
       `${CATEGORY_LABELS[problem.category]} · ${session.index + 1} / ${session.problems.length}`
 
     const filled = { ...session.filled }
@@ -58,26 +71,48 @@ export function renderQuiz(container, session, handlers) {
     paintProgress()
   }
 
-  const commit = () => {
+  // key 는 자동 채점되는 한 자리 칸(carry/product 등)에서 방금 눌린 숫자다.
+  // 태블릿에서 손가락이 겹눌려 같은 버튼이 아주 짧은 간격으로 두 번 눌리면,
+  // 첫 입력이 이미 다음 칸으로 넘어간 뒤라 두 번째 입력이 그 다음 칸의
+  // 오답으로 채점된다 — 같은 키가 150ms 안에 다시 들어오면 무시한다.
+  const commit = (key) => {
+    if (key !== undefined) {
+      const now = Date.now()
+      if (key === lastKey && now - lastKeyAt < 150) {
+        typed = ''
+        return
+      }
+      lastKey = key
+      lastKeyAt = now
+    }
+
     const problemIndex = session.index
     const cellId = currentCell(session)?.id ?? null
 
     const verdict = submit(session, typed)
     typed = ''
     message = verdict.message
-    wrongId = verdict.correct ? null : cellId
+    // 두 번째 오답이면 정답이 그 칸에 그대로 채워지므로(reveal), 그 칸을 오답
+    // 스타일(빨간 테두리)로 표시하지 않는다 — 지금 보여주는 건 정답이다.
+    wrongId = (!verdict.correct && !verdict.reveal) ? cellId : null
 
-    if (!verdict.correct) {
-      setTimeout(() => { wrongId = null; paint() }, 400)
+    clearTimeout(wrongTimer)
+    wrongTimer = null
+    if (wrongId) {
+      wrongTimer = setTimeout(() => { wrongTimer = null; wrongId = null; paint() }, 400)
     }
 
     if (verdict.setDone) {
+      clearTimeout(wrongTimer)
+      wrongTimer = null
       pad.destroy()
       onSetDone(results(), elapsedMs(session))
       return
     }
 
     if (verdict.problemDone && session.problemState[problemIndex].wrong) {
+      clearTimeout(wrongTimer)
+      wrongTimer = null
       pad.destroy()
       onProblemWrong(
         session.problems[problemIndex],
@@ -100,7 +135,7 @@ export function renderQuiz(container, session, handlers) {
         paint()
       } else {
         typed = d
-        commit()
+        commit(d)
       }
     },
     onBackspace: () => { typed = typed.slice(0, -1); paint() },
@@ -110,5 +145,15 @@ export function renderQuiz(container, session, handlers) {
   let pad = mountKeypad()
   paint()
 
-  return { destroy() { pad.destroy(); container.innerHTML = '' } }
+  return {
+    destroy() {
+      clearTimeout(wrongTimer)
+      wrongTimer = null
+      // 세트가 이미 끝났다면 onSetDone 쪽에서 이 container 에 다른 화면을 그렸을
+      // 수 있다 — 그 화면을 지우면 안 되므로 아무 것도 하지 않는다.
+      if (session.done) return
+      pad.destroy()
+      container.innerHTML = ''
+    }
+  }
 }

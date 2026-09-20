@@ -54,6 +54,15 @@ describe('submit', () => {
     expect(sessionResults(s)[0]).toMatchObject({ correct: false, usedHint: false })
   })
 
+  it('빈 제출은 시도 횟수를 쓰지 않아, 그 다음 진짜 오답이 바로 공개되지 않는다', () => {
+    const s = createSession(problems)
+    submit(s, '')     // 빈 제출 1 — 숫자를 누르지 않음
+    submit(s, 'abc')  // 빈 제출 2 — 숫자가 아님
+    const r = submit(s, 9)   // 이제야 첫 번째 진짜 오답
+    expect(r.correct).toBe(false)
+    expect(r.reveal).toBe(false)
+  })
+
   it('구구단은 한 칸으로 끝난다', () => {
     const s = createSession([problems[1]])
     const r = submit(s, 56)

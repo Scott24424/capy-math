@@ -51,3 +51,14 @@ export function createKeypad(container, { onDigit, onBackspace, onEnter }) {
   instances.set(container, api)
   return api
 }
+
+// container 가 붙잡고 있던 숫자판이 있으면 지운다. WeakMap 은 createKeypad 에
+// 넘긴 노드(대개 #pad)로 키를 잡으므로, 그 노드 자체가 매번 새로 만들어지는
+// 화면(예: renderQuiz 가 매번 container.innerHTML 을 통째로 새로 쓰는 경우)에서는
+// createKeypad 내부의 "이전 것을 지운다" 방어가 전혀 작동하지 않는다 — 항상
+// "본 적 없는" 새 노드로만 호출되기 때문이다. 그런 화면은 innerHTML 을 새로
+// 쓰기 전에, 지금 붙어 있는 노드를 이걸로 먼저 지워야 한다.
+export function destroyKeypad(node) {
+  const api = instances.get(node)
+  if (api) api.destroy()
+}
