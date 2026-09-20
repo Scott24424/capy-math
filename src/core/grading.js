@@ -2,12 +2,13 @@ export const MAX_ATTEMPTS = 2
 
 export function judgeCell(cell, input, attemptsSoFar) {
   const raw = String(input).trim()
+  const numeric = Number(raw)
 
-  if (raw === '') {
+  if (raw === '' || !Number.isFinite(numeric)) {
     return { correct: false, reveal: false, message: '숫자를 눌러 보세요' }
   }
 
-  if (Number(raw) === cell.value) {
+  if (numeric === cell.value) {
     return { correct: true, reveal: false, message: '' }
   }
 

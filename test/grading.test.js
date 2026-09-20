@@ -36,6 +36,22 @@ describe('judgeCell', () => {
     expect(r.reveal).toBe(false)
   })
 
+  it.each([
+    ['null', null],
+    ['undefined', undefined],
+    ['NaN', NaN],
+    ['숫자가 아닌 문자열', 'abc']
+  ])('%s 입력은 빈 입력으로 보고 시도 횟수를 쓰지 않는다', (_label, badInput) => {
+    const first = judgeCell(cell, badInput, 0)
+    expect(first.correct).toBe(false)
+    expect(first.reveal).toBe(false)
+    expect(first.message).toBe('숫자를 눌러 보세요')
+
+    const second = judgeCell(cell, badInput, 1)
+    expect(second.correct).toBe(false)
+    expect(second.reveal).toBe(false)
+  })
+
   it('구구단처럼 여러 자리 답도 통째로 비교한다', () => {
     const ans = { id: 'answer', kind: 'answer', value: 56, hint: '7 × 8 = 56이에요' }
     expect(judgeCell(ans, 56, 0).correct).toBe(true)
