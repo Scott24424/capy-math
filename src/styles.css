@@ -1,0 +1,20 @@
+:root {
+  --bg: #fdfaf5;
+  --ink: #33220f;
+  --muted: #8a7c6b;
+  --line: #d9cec0;
+  --accent: #f0912f;
+  --ok: #7cc46a;
+  --bad: #e8564f;
+  --card: #ffffff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#app { max-width: 720px; margin: 0 auto; padding: 16px; }
