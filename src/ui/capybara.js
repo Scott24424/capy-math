@@ -15,16 +15,26 @@ export function clampLevel(level) {
 export const seriesOf = (level) => SERIES[Math.floor((clampLevel(level) - 1) / 10)]
 export const stageOf = (level) => (clampLevel(level) - 1) % 10
 
+// early 소품은 얼굴 옆이 아니라 발치(왼쪽 바닥)에 둔다 — 얼굴에 겹치면
+// 눈물/핏방울처럼 보이는 사고가 났었다 (2026-09-20 리뷰).
 const EARLY = {
-  leaf:  '<path d="M68 72 q12 -4 16 -12 q-12 0 -16 12" fill="#5aa544"/>',
-  drop:  '<path d="M16 70 q-4 -8 2 -12 q6 4 2 12 z" fill="#8ed0e6"/>',
-  seed:  '<ellipse cx="80" cy="76" rx="5" ry="6" fill="#e8564f"/><path d="M80 70 v-3" stroke="#6b4a24" stroke-width="1.6"/>',
-  flake: '<path d="M80 72 v10 M75 74 l10 6 M85 74 l-10 6" stroke="#cfe0f5" stroke-width="2" stroke-linecap="round"/>',
-  star:  '<path d="M80 70 l2.2 4.6 5 .7 -3.6 3.5 .9 5 -4.5 -2.4 -4.5 2.4 .9 -5 -3.6 -3.5 5 -.7 z" fill="#f5c542"/>'
+  leaf:  '<path d="M10 96 q9 -3 12 -9 q-9 0 -12 9" fill="#5aa544"/>',
+  drop:  '<circle cx="12" cy="92" r="4" fill="#bfe9f5" opacity=".85" stroke="#8ed0e6" stroke-width=".6"/><circle cx="19" cy="96.5" r="2.6" fill="#bfe9f5" opacity=".85" stroke="#8ed0e6" stroke-width=".6"/><circle cx="9" cy="98.5" r="2" fill="#bfe9f5" opacity=".85" stroke="#8ed0e6" stroke-width=".6"/>',
+  seed:  '<circle cx="14" cy="93" r="5.5" fill="#e8564f"/><path d="M14 87.5 v-3" stroke="#6b4a24" stroke-width="1.6" stroke-linecap="round"/><path d="M14 87 q4 -3 6 0 q-4 2 -6 0" fill="#5aa544"/>',
+  flake: '<path d="M14 90 v10 M9 92 l10 6 M19 92 l-10 6" stroke="#cfe0f5" stroke-width="2" stroke-linecap="round"/>',
+  star:  '<path d="M14 88 l2.2 4.6 5 .7 -3.6 3.5 .9 5 -4.5 -2.4 -4.5 2.4 .9 -5 -3.6 -3.5 5 -.7 z" fill="#f5c542"/>'
 }
 
+// 5장 꽃잎을 회전시켜 만든 꽃 — 원 하나짜리는 단추처럼 보였다.
+const petalFlower = (() => {
+  const petals = Array.from({ length: 5 }, (_, i) =>
+    `<ellipse transform="rotate(${i * 72})" cx="0" cy="-3.6" rx="2.3" ry="3.3" fill="#fff" stroke="#f2c8dd" stroke-width=".5"/>`
+  ).join('')
+  return `<g transform="translate(50,84)">${petals}<circle r="1.8" fill="#f5c542"/></g>`
+})()
+
 const NECK = {
-  flower: '<circle cx="50" cy="84" r="5" fill="#fff"/><circle cx="50" cy="84" r="2" fill="#f5c542"/>',
+  flower: petalFlower,
   towel:  '<rect x="34" y="79" width="32" height="8" rx="4" fill="#fff"/><rect x="34" y="82" width="32" height="2" fill="#8ed0e6"/>',
   basket: '<path d="M34 82 h32 l-4 10 h-24 z" fill="#c68a4a"/><path d="M34 82 h32" stroke="#a06f37" stroke-width="2"/>',
   scarf:  '<rect x="32" y="79" width="36" height="9" rx="4.5" fill="#e8564f"/><rect x="60" y="84" width="8" height="14" rx="3" fill="#e8564f"/>',
@@ -43,36 +53,44 @@ export function capybaraSvg(level, size = 120) {
   const lv = clampLevel(level)
   const s = seriesOf(lv)
   const t = stageOf(lv)
-  const p = []
+  // 계열 안에서 레벨이 오르면 몸집이 커진다: 고정된 반경 조정 대신
+  // 바닥을 기준점으로 삼아 그림 전체를 확대한다 (0단계 0.80배 → 9단계 1.00배).
+  const scale = 0.80 + 0.20 * (t / 9)
 
-  if (t >= 8) p.push(`<circle cx="50" cy="52" r="47" fill="${s.accent}" opacity=".10"/>`)
+  const back = []
+  const body = []
 
-  // 몸통과 머리
-  p.push(`<ellipse cx="50" cy="90" rx="${29 + t * 0.7}" ry="15" fill="${s.dark}"/>`)
-  p.push(`<ellipse cx="23" cy="27" rx="8.5" ry="7.5" fill="${s.dark}"/>`)
-  p.push(`<ellipse cx="77" cy="27" rx="8.5" ry="7.5" fill="${s.dark}"/>`)
-  p.push(`<ellipse cx="50" cy="52" rx="${31 + t * 0.5}" ry="${26 + t * 0.4}" fill="${s.body}"/>`)
-  p.push(`<ellipse cx="50" cy="67" rx="18" ry="13" fill="${s.muzzle}"/>`)
+  // 배경 — 확대 대상이 아니다
+  if (t >= 8) back.push(`<circle cx="50" cy="52" r="47" fill="${s.accent}" opacity=".10"/>`)
+
+  // 몸통과 머리 — 이 안의 요소들은 모두 스케일 그룹 안에서 함께 자란다
+  body.push('<ellipse cx="50" cy="90" rx="29" ry="15" fill="' + s.dark + '"/>')
+  body.push('<ellipse cx="23" cy="27" rx="8.5" ry="7.5" fill="' + s.dark + '"/>')
+  body.push('<ellipse cx="77" cy="27" rx="8.5" ry="7.5" fill="' + s.dark + '"/>')
+  body.push(`<ellipse cx="50" cy="52" rx="31" ry="26" fill="${s.body}"/>`)
+  body.push(`<ellipse cx="50" cy="67" rx="18" ry="13" fill="${s.muzzle}"/>`)
 
   if (t >= 1) {
-    p.push('<circle cx="28" cy="62" r="5" fill="#ff9eb5" opacity=".5"/>')
-    p.push('<circle cx="72" cy="62" r="5" fill="#ff9eb5" opacity=".5"/>')
+    body.push('<circle cx="28" cy="62" r="5" fill="#ff9eb5" opacity=".5"/>')
+    body.push('<circle cx="72" cy="62" r="5" fill="#ff9eb5" opacity=".5"/>')
   }
 
   // 5단계부터 느긋한 반달눈
   if (t >= 5) {
-    p.push('<path d="M31 45 q5.5 -4 11 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
-    p.push('<path d="M58 45 q5.5 -4 11 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
+    body.push('<path d="M31 45 q5.5 -4 11 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
+    body.push('<path d="M58 45 q5.5 -4 11 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
   } else {
-    p.push('<circle cx="37" cy="45" r="3.8" fill="#33220f"/><circle cx="63" cy="45" r="3.8" fill="#33220f"/>')
+    body.push('<circle cx="37" cy="45" r="3.8" fill="#33220f"/><circle cx="63" cy="45" r="3.8" fill="#33220f"/>')
   }
 
-  p.push('<ellipse cx="50" cy="62" rx="7" ry="4.5" fill="#4a3421"/>')
-  p.push('<path d="M50 66.5 v3 M50 69.5 q-5 5 -9 1 M50 69.5 q5 5 9 1" stroke="#4a3421" stroke-width="2" fill="none" stroke-linecap="round"/>')
+  body.push('<ellipse cx="50" cy="62" rx="7" ry="4.5" fill="#4a3421"/>')
+  body.push('<path d="M50 66.5 v3 M50 69.5 q-5 5 -9 1 M50 69.5 q5 5 9 1" stroke="#4a3421" stroke-width="2" fill="none" stroke-linecap="round"/>')
 
-  if (t >= 2) p.push(EARLY[s.early])
-  if (t >= 4) p.push(NECK[s.neck])
-  if (t >= 6) p.push(HEAD[s.head])
+  if (t >= 2) body.push(EARLY[s.early])
+  if (t >= 4) body.push(NECK[s.neck])
+  if (t >= 6) body.push(HEAD[s.head])
+
+  const p = [...back, `<g transform="translate(50,100) scale(${scale}) translate(-50,-100)">${body.join('')}</g>`]
 
   if (t === 9) {
     p.push(`<path d="M12 44 l1.6 3.6 3.6 1.6 -3.6 1.6 -1.6 3.6 -1.6 -3.6 -3.6 -1.6 3.6 -1.6 z" fill="${s.accent}"/>`)
