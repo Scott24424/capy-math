@@ -74,11 +74,17 @@ export function renderQuiz(container, session, handlers) {
   // key 는 자동 채점되는 한 자리 칸(carry/product 등)에서 방금 눌린 숫자다.
   // 태블릿에서 손가락이 겹눌려 같은 버튼이 아주 짧은 간격으로 두 번 눌리면,
   // 첫 입력이 이미 다음 칸으로 넘어간 뒤라 두 번째 입력이 그 다음 칸의
-  // 오답으로 채점된다 — 같은 키가 150ms 안에 다시 들어오면 무시한다.
+  // 오답으로 채점된다.
+  // 다만 아이가 같은 숫자가 연속으로 필요한 칸(예: 11×11의 첫 두 칸)을 진짜로
+  // 빠르게 두 번 눌렀을 수도 있다 — 그 입력을 지우면 그 답은 아무 흔적도 없이
+  // 사라지고, 아이는 프로그램이 고장났다고 느낀다. 겹눌림은 몇십 ms 안에 오지만
+  // 사람이 의도를 갖고 같은 숫자를 다시 누르는 데는 150ms 이상 걸리므로,
+  // 창을 짧게(60ms) 잡아 "받아주는 쪽"으로 기운다 — 겹눌림을 못 거르는 것보다
+  // 진짜 입력을 삼키는 게 훨씬 나쁘다.
   const commit = (key) => {
     if (key !== undefined) {
       const now = Date.now()
-      if (key === lastKey && now - lastKeyAt < 150) {
+      if (key === lastKey && now - lastKeyAt < 60) {
         typed = ''
         return
       }

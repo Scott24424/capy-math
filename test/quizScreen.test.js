@@ -81,3 +81,56 @@ describe('renderQuiz 숫자판 mount/destroy', () => {
     expect(grid.innerHTML).not.toContain('>55<')
   })
 })
+
+
+describe('renderQuiz 같은 숫자 겹눌림 억제', () => {
+  let fakeWindow
+  let nowSpy
+  let now
+
+  beforeEach(() => {
+    fakeWindow = new FakeWindow()
+    vi.stubGlobal('window', fakeWindow)
+    now = 1000
+    nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+  })
+
+  afterEach(() => {
+    nowSpy.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
+  // 11×11 은 첫 두 칸이 모두 숫자 1 이다 — 같은 숫자를 연달아 눌러야 하는
+  // 문제라, 겹눌림 억제 로직이 진짜 입력을 삼키지 않는지 확인하기 좋다.
+  const makeElevenSquaredSession = () =>
+    createSession([{ id: '11x11', category: 'two-by-two', difficulty: 'normal', a: 11, b: 11 }])
+
+  const pressOne = () => {
+    const event = { type: 'keydown', key: '1', preventDefault() {} }
+    fakeWindow.dispatchEvent(event)
+  }
+
+  it('같은 숫자를 30ms 안에 두 번 누르면 두 번째는 겹눌림으로 무시된다', () => {
+    const session = makeElevenSquaredSession()
+    const container = new FakeElement()
+    renderQuiz(container, session, { onProblemWrong: () => {}, onSetDone: () => {} })
+
+    pressOne()
+    now += 30
+    pressOne()
+
+    expect(session.cellIndex).toBe(1)
+  })
+
+  it('같은 숫자를 200ms 간격으로 두 번 누르면 둘 다 아이가 낸 답으로 채점된다', () => {
+    const session = makeElevenSquaredSession()
+    const container = new FakeElement()
+    renderQuiz(container, session, { onProblemWrong: () => {}, onSetDone: () => {} })
+
+    pressOne()
+    now += 200
+    pressOne()
+
+    expect(session.cellIndex).toBe(2)
+  })
+})
