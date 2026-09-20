@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { defaultState, loadState, saveState, STORAGE_KEY, SCHEMA_VERSION } from '../src/storage.js'
 import { CATEGORIES } from '../src/core/problem.js'
+import { buildSet, finishSet } from '../src/app.js'
 
 /** 진짜 localStorage 처럼 동작하는 가짜 저장소 */
 const fakeStore = (initial = {}) => {
@@ -95,5 +96,98 @@ describe('saveState / loadState', () => {
   it('저장소가 아예 없어도(undefined) 터지지 않는다', () => {
     expect(() => loadState(undefined)).not.toThrow()
     expect(saveState(defaultState(), undefined)).toBe(false)
+  })
+
+  // Important 3: 필드 하나가 이상해도 앱이 영영 고장 나면 안 된다 — 그 필드만
+  // 기본값으로 되돌리고, buildSet/finishSet 이 예외 없이 계속 돌아가야 한다.
+  describe('필드별 손상 방어', () => {
+    const runsFine = (state) => {
+      expect(() => {
+        const set = buildSet(state, 'two-by-one')
+        const results = set.map(p => ({
+          problemId: p.id, category: p.category, difficulty: p.difficulty,
+          a: p.a, b: p.b, correct: true, usedHint: false, isReview: p.isReview === true
+        }))
+        finishSet(state, results, 10000)
+      }).not.toThrow()
+    }
+
+    it('reviewQueue 가 숫자면 빈 배열로 되돌리고 계속 돌아간다', () => {
+      const store = { getItem: () => JSON.stringify({ version: SCHEMA_VERSION, reviewQueue: 42 }) }
+      const s = loadState(store)
+      expect(Array.isArray(s.reviewQueue)).toBe(true)
+      expect(s.reviewQueue).toEqual([])
+      runsFine(s)
+    })
+
+    it('reviewQueue 가 문자열이면 빈 배열로 되돌린다', () => {
+      const store = { getItem: () => JSON.stringify({ version: SCHEMA_VERSION, reviewQueue: 'x' }) }
+      const s = loadState(store)
+      expect(s.reviewQueue).toEqual([])
+      runsFine(s)
+    })
+
+    it('reviewQueue 의 항목 하나가 null 이면 그 항목만 버린다', () => {
+      const store = {
+        getItem: () => JSON.stringify({
+          version: SCHEMA_VERSION,
+          reviewQueue: [null, { id: '20x3', category: 'two-by-one', a: 20, b: 3, streak: 0 }]
+        })
+      }
+      const s = loadState(store)
+      expect(s.reviewQueue).toHaveLength(1)
+      expect(s.reviewQueue[0].id).toBe('20x3')
+      runsFine(s)
+    })
+
+    it('difficultyByCategory 값이 목록에 없으면 기본값 easy 로 되돌린다', () => {
+      const store = {
+        getItem: () => JSON.stringify({
+          version: SCHEMA_VERSION,
+          difficultyByCategory: { 'times-table': 'medium' }
+        })
+      }
+      const s = loadState(store)
+      expect(s.difficultyByCategory['times-table']).toBe('easy')
+      runsFine(s)
+    })
+
+    it('level 이 숫자가 아니면 기본값 1로 되돌려, 다시 레벨을 올릴 수 있다', () => {
+      const store = { getItem: () => JSON.stringify({ version: SCHEMA_VERSION, level: 'x' }) }
+      const s = loadState(store)
+      expect(s.level).toBe(1)
+      runsFine(s)
+    })
+
+    it('xp 가 문자열이면 기본값 0으로 되돌린다', () => {
+      const store = { getItem: () => JSON.stringify({ version: SCHEMA_VERSION, xp: 'x' }) }
+      const s = loadState(store)
+      expect(s.xp).toBe(0)
+      runsFine(s)
+    })
+
+    it('bestByCategory 값이 이상한 모양이면 그 카테고리만 null 로 되돌린다', () => {
+      const store = {
+        getItem: () => JSON.stringify({
+          version: SCHEMA_VERSION,
+          bestByCategory: { 'two-by-one': 'x' }
+        })
+      }
+      const s = loadState(store)
+      expect(s.bestByCategory['two-by-one']).toBeNull()
+      runsFine(s)
+    })
+
+    it('recentByCategory 값이 배열이 아니면 기본값(빈 배열)으로 되돌린다', () => {
+      const store = {
+        getItem: () => JSON.stringify({
+          version: SCHEMA_VERSION,
+          recentByCategory: { 'two-by-one': 'x' }
+        })
+      }
+      const s = loadState(store)
+      expect(s.recentByCategory['two-by-one']).toEqual([])
+      runsFine(s)
+    })
   })
 })

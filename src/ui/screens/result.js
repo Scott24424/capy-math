@@ -1,16 +1,10 @@
 import { capybaraSvg, clampLevel, seriesOf } from '../capybara.js'
 import { xpForLevel, MAX_LEVEL, BADGES } from '../../core/progress.js'
+import { objectParticle } from '../../core/korean.js'
 
 const mmss = (ms) => {
   const total = Math.round(Math.max(0, Number(ms) || 0) / 1000)
   return `${Math.floor(total / 60)}분 ${String(total % 60).padStart(2, '0')}초`
-}
-
-/** 한글 음절의 받침 유무로 '을/를' 조사를 고른다 (progress.js 의 것과 같은 규칙) */
-function objectParticle(word) {
-  const code = word.charCodeAt(word.length - 1) - 0xac00
-  if (code < 0 || code > 11171) return '을'
-  return code % 28 === 0 ? '를' : '을'
 }
 
 /** 새 계열로 넘어갈 때 반짝일 4개의 반짝임 — 위치와 지연을 조금씩 흩어 자연스럽게 만든다 */
@@ -47,8 +41,12 @@ export function renderResult(container, summary, xpInfo, state, { onAgain, onRev
   const newSeries = leveledUp && seriesOf(fromLevel).name !== seriesOf(level).name
   const seriesName = seriesOf(level).name
 
+  // 만렙(50)이면 applyXp 가 경험치를 쌓지 않으므로 "경험치 +N" 은 거짓말이 된다 —
+  // 대신 정직하게 최고 레벨이라는 것만 알려준다.
+  const xpText = level >= MAX_LEVEL ? '이미 최고 레벨이에요!' : `경험치 +${gained}`
+
   container.innerHTML = `
-    <div class="result">
+    <div class="result"${newSeries ? ` style="background:${seriesOf(level).bg}"` : ''}>
       <div class="result-top">
         <div class="result-capy${leveledUp ? ' is-level-up' : ''}">
           ${capybaraSvg(level, 110)}
@@ -61,7 +59,7 @@ export function renderResult(container, summary, xpInfo, state, { onAgain, onRev
           <div class="result-time">${mmss(summary?.elapsedMs)}${summary?.best ? ' · 최고 기록이에요! 🎉' : ''}</div>
           <div class="bar"><i style="width:${percent}%"></i></div>
           <div class="result-xp">
-            경험치 +${gained}
+            ${xpText}
             ${leveledUp ? ` · 레벨 ${fromLevel} → ${level}!` : ''}
           </div>
           ${newSeries ? `<div class="result-series">${seriesName}${objectParticle(seriesName)} 만났어요!</div>` : ''}

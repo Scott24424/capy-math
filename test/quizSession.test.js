@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { createSession, currentCell, submit, sessionResults } from '../src/core/session.js'
 
 const problems = [
@@ -89,5 +89,33 @@ describe('submit', () => {
     const s = createSession([{ ...problems[1], isReview: true }])
     submit(s, 56)
     expect(sessionResults(s)[0].isReview).toBe(true)
+  })
+
+  it('빈 입력 메시지 문구가 바뀌어도 시도 횟수는 여전히 소모되지 않는다', async () => {
+    // grading.js 의 안내 문구를 다른 것으로 바꿔치기해도, session.js 는
+    // verdict.blank 구조적 필드만 보고 판단하므로 계약이 깨지지 않아야 한다.
+    vi.resetModules()
+    vi.doMock('../src/core/grading.js', async () => {
+      const actual = await vi.importActual('../src/core/grading.js')
+      return {
+        ...actual,
+        judgeCell: (cell, input, attemptsSoFar) => {
+          const verdict = actual.judgeCell(cell, input, attemptsSoFar)
+          return verdict.blank ? { ...verdict, message: '숫자를 눌러 주세요' } : verdict
+        }
+      }
+    })
+    const { createSession: freshCreateSession, submit: freshSubmit } =
+      await import('../src/core/session.js')
+
+    const s = freshCreateSession(problems)
+    freshSubmit(s, '')     // 빈 제출 1 — 문구가 바뀌었다
+    freshSubmit(s, 'abc')  // 빈 제출 2
+    const r = freshSubmit(s, 9)   // 이제야 첫 번째 진짜 오답이어야 한다
+    expect(r.correct).toBe(false)
+    expect(r.reveal).toBe(false)
+
+    vi.doUnmock('../src/core/grading.js')
+    vi.resetModules()
   })
 })

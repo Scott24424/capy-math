@@ -5,7 +5,7 @@ const cell = { id: 'p0-c0', kind: 'product', value: 2, hint: '7 × 6 = 42예요'
 
 describe('judgeCell', () => {
   it('맞으면 정답으로 처리하고 아무 말도 하지 않는다', () => {
-    expect(judgeCell(cell, 2, 0)).toEqual({ correct: true, reveal: false, message: '' })
+    expect(judgeCell(cell, 2, 0)).toEqual({ correct: true, reveal: false, blank: false, message: '' })
   })
 
   it('숫자를 문자열로 넣어도 맞게 처리한다', () => {
@@ -34,6 +34,7 @@ describe('judgeCell', () => {
     const r = judgeCell(cell, '', 0)
     expect(r.correct).toBe(false)
     expect(r.reveal).toBe(false)
+    expect(r.blank).toBe(true)
   })
 
   it.each([
@@ -41,15 +42,23 @@ describe('judgeCell', () => {
     ['undefined', undefined],
     ['NaN', NaN],
     ['숫자가 아닌 문자열', 'abc']
-  ])('%s 입력은 빈 입력으로 보고 시도 횟수를 쓰지 않는다', (_label, badInput) => {
+  ])('%s 입력은 빈 입력으로 보고 구조적으로 blank 로 표시한다', (_label, badInput) => {
+    // 이 판정은 message 문구가 아니라 blank 필드로 이뤄진다 — 문구를 나중에
+    // 고쳐도(예: '숫자를 눌러 주세요') 이 계약은 깨지지 않아야 한다.
     const first = judgeCell(cell, badInput, 0)
     expect(first.correct).toBe(false)
     expect(first.reveal).toBe(false)
-    expect(first.message).toBe('숫자를 눌러 보세요')
+    expect(first.blank).toBe(true)
 
     const second = judgeCell(cell, badInput, 1)
     expect(second.correct).toBe(false)
     expect(second.reveal).toBe(false)
+    expect(second.blank).toBe(true)
+  })
+
+  it('정답이 아닌 실제 시도는 blank 가 아니다', () => {
+    expect(judgeCell(cell, 5, 0).blank).toBe(false)
+    expect(judgeCell(cell, 5, 1).blank).toBe(false)
   })
 
   it('구구단처럼 여러 자리 답도 통째로 비교한다', () => {

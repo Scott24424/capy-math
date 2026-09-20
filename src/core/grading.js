@@ -5,18 +5,18 @@ export function judgeCell(cell, input, attemptsSoFar) {
   const numeric = Number(raw)
 
   if (raw === '' || !Number.isFinite(numeric)) {
-    return { correct: false, reveal: false, message: '숫자를 눌러 보세요' }
+    return { correct: false, reveal: false, blank: true, message: '숫자를 눌러 보세요' }
   }
 
   if (numeric === cell.value) {
-    return { correct: true, reveal: false, message: '' }
+    return { correct: true, reveal: false, blank: false, message: '' }
   }
 
   const used = attemptsSoFar + 1
   if (used >= MAX_ATTEMPTS) {
-    return { correct: false, reveal: true, message: cell.hint }
+    return { correct: false, reveal: true, blank: false, message: cell.hint }
   }
-  return { correct: false, reveal: false, message: '다시 한 번 해볼까요?' }
+  return { correct: false, reveal: false, blank: false, message: '다시 한 번 해볼까요?' }
 }
 
 export function summarize(results, elapsedMs) {

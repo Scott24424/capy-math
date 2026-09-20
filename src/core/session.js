@@ -1,12 +1,6 @@
 import { buildLayout } from './vertical.js'
 import { judgeCell } from './grading.js'
 
-// judgeCell 이 빈 입력(빈 문자열/null/undefined/NaN/숫자 아닌 문자열)에 항상
-// 돌려주는 고정 문장이다(grading.test.js 가 이 문장으로 고정해 둔다) — attemptsSoFar
-// 와 무관하게 항상 같은 값이므로, 입력 문자열을 여기서 다시 숫자인지 파싱하지
-// 않고도 judgeCell 의 판정 결과(verdict)만 보고 "정말 숫자를 눌렀는지"를 가릴 수 있다.
-const BLANK_MESSAGE = '숫자를 눌러 보세요'
-
 export function createSession(problems) {
   return {
     problems,
@@ -35,7 +29,7 @@ export function submit(session, input) {
   const verdict = judgeCell(cell, input, session.attempts)
 
   if (!verdict.correct && !verdict.reveal) {
-    if (verdict.message !== BLANK_MESSAGE) session.attempts++
+    if (!verdict.blank) session.attempts++
     return { ...verdict, problemDone: false, setDone: false }
   }
 

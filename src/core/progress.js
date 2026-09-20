@@ -1,4 +1,5 @@
 import { CATEGORIES, CATEGORY_LABELS } from './problem.js'
+import { objectParticle } from './korean.js'
 
 export const MAX_LEVEL = 50
 
@@ -73,13 +74,6 @@ export const BADGES = {
   'series-3':        { label: '과수원 졸업', description: '과수원 카피바라를 다 키웠어요' },
   'series-4':        { label: '눈나라 졸업', description: '눈나라 카피바라를 다 키웠어요' },
   'series-5':        { label: '별나라 졸업', description: '별나라 카피바라를 다 키웠어요' }
-}
-
-/** 한글 음절의 받침 유무로 '을/를' 조사를 고른다 */
-function objectParticle(word) {
-  const code = word.charCodeAt(word.length - 1) - 0xac00
-  if (code < 0 || code > 11171) return '을'
-  return code % 28 === 0 ? '를' : '을'
 }
 
 for (const c of CATEGORIES) {
