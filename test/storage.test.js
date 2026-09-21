@@ -250,12 +250,21 @@ describe('진도 내보내기 / 불러오기', () => {
     expect(result.reason).toBe('wrong-kind')
   })
 
-  it('스키마 버전이 다르면(더 오래됐든 새것이든) 거부한다', () => {
+  it('더 오래된 스키마 버전은 거부하고 이유를 구분한다', () => {
     const state = populatedState()
-    for (const schemaVersion of [SCHEMA_VERSION - 1, SCHEMA_VERSION + 1, 999]) {
+    for (const schemaVersion of [SCHEMA_VERSION - 1, 0, -5]) {
       const result = parseImport({ kind: EXPORT_KIND, schemaVersion, exportedAt: 'x', state })
       expect(result.ok).toBe(false)
-      expect(result.reason).toBe('wrong-version')
+      expect(result.reason).toBe('wrong-version-older')
+    }
+  })
+
+  it('더 새로운 스키마 버전은 거부하고 이유를 구분한다', () => {
+    const state = populatedState()
+    for (const schemaVersion of [SCHEMA_VERSION + 1, 999]) {
+      const result = parseImport({ kind: EXPORT_KIND, schemaVersion, exportedAt: 'x', state })
+      expect(result.ok).toBe(false)
+      expect(result.reason).toBe('wrong-version-newer')
     }
   })
 

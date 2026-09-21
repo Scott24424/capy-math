@@ -137,16 +137,23 @@ export function buildExport(state) {
  * 안의 state 는 loadState 와 똑같은 validateState/merge 를 거치므로, 필드 하나가
  * 깨져 있어도 그 필드만 기본값으로 되돌아가고 예외는 던지지 않는다.
  *
- * schemaVersion 이 지금 버전과 다르면(더 오래됐든 새것이든) 통째로 거부한다 —
- * 지금은 스키마가 1가지뿐이라 옮겨 줄 마이그레이션 경로가 없고, 어설프게
- * 맞춰 넣느니 "다시 내보내 주세요" 라고 말하는 편이 안전하다.
+ * schemaVersion 이 지금 버전과 다르면 통째로 거부한다 — 지금은 스키마가
+ * 1가지뿐이라 옮겨 줄 마이그레이션 경로가 없고, 어설프게 맞춰 넣느니 거부하는
+ * 편이 안전하다. 다만 "더 새것"과 "더 오래됨"은 화면에서 서로 다른 말을 해야
+ * 하는 별개 상황이라(하나는 지금 새로고침하면 풀리고, 하나는 안 풀린다)
+ * reason 을 나눠서 돌려준다.
  */
 export function parseImport(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return { ok: false, reason: 'not-object' }
   }
   if (value.kind !== EXPORT_KIND) return { ok: false, reason: 'wrong-kind' }
-  if (value.schemaVersion !== SCHEMA_VERSION) return { ok: false, reason: 'wrong-version' }
+  if (value.schemaVersion !== SCHEMA_VERSION) {
+    return {
+      ok: false,
+      reason: value.schemaVersion > SCHEMA_VERSION ? 'wrong-version-newer' : 'wrong-version-older'
+    }
+  }
   const state = validateState(value.state)
   if (!state) return { ok: false, reason: 'invalid-state' }
   return { ok: true, state }
