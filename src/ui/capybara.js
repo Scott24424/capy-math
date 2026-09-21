@@ -66,27 +66,38 @@ export function capybaraSvg(level, size = 120) {
   if (t >= 8) back.push(`<circle cx="50" cy="52" r="47" fill="${s.accent}" opacity=".10"/>`)
 
   // 몸통과 머리 — 이 안의 요소들은 모두 스케일 그룹 안에서 함께 자란다
+  //
+  // 카피바라 vs 곰: 카피바라는 (1) 머리가 둥근 타원이 아니라 각진 사각에 가깝고 옆으로
+  // 넓다, (2) 주둥이가 아래 얼굴 대부분을 차지할 만큼 크고 뭉툭하다, (3) 코가 작은
+  // 점이 아니라 주둥이 위쪽을 가로지르는 넓은 띠다, (4) 눈이 작고 위쪽 양 구석에
+  // 몰려 있다, (5) 귀가 정수리에 얹힌 게 아니라 옆머리에 낮게 붙어 실루엣을 거의
+  // 깨지 않는다. 이 다섯 가지를 순서대로 고쳤다 (2026-09-21 곰 문제 리뷰).
   body.push('<ellipse cx="50" cy="90" rx="29" ry="15" fill="' + s.dark + '"/>')
-  body.push('<ellipse cx="23" cy="27" rx="8.5" ry="7.5" fill="' + s.dark + '"/>')
-  body.push('<ellipse cx="77" cy="27" rx="8.5" ry="7.5" fill="' + s.dark + '"/>')
-  body.push(`<ellipse cx="50" cy="52" rx="31" ry="26" fill="${s.body}"/>`)
-  body.push(`<ellipse cx="50" cy="67" rx="18" ry="13" fill="${s.muzzle}"/>`)
+  // 귀 — 작고 둥글며 옆머리에 낮게, 정수리가 아니라
+  body.push(`<circle cx="17" cy="33" r="6.5" fill="${s.dark}"/>`)
+  body.push(`<circle cx="83" cy="33" r="6.5" fill="${s.dark}"/>`)
+  // 머리 — 둥근 타원 대신 옆으로 넓고 윗면이 평평한 각진 사각
+  body.push(`<rect x="14" y="26" width="72" height="48" rx="16" ry="16" fill="${s.body}"/>`)
+  // 주둥이 — 아래 얼굴 대부분을 채우는 크고 뭉툭한 사각
+  body.push(`<rect x="26" y="48" width="48" height="28" rx="10" ry="10" fill="${s.muzzle}"/>`)
 
   if (t >= 1) {
-    body.push('<circle cx="28" cy="62" r="5" fill="#ff9eb5" opacity=".5"/>')
-    body.push('<circle cx="72" cy="62" r="5" fill="#ff9eb5" opacity=".5"/>')
+    body.push('<circle cx="24" cy="58" r="5" fill="#ff9eb5" opacity=".5"/>')
+    body.push('<circle cx="76" cy="58" r="5" fill="#ff9eb5" opacity=".5"/>')
   }
 
+  // 눈 — 작고, 위쪽 양 구석에 몰려 있다 (곰처럼 얼굴 가운데가 아니라).
   // 5단계부터 느긋한 반달눈
   if (t >= 5) {
-    body.push('<path d="M31 45 q5.5 -4 11 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
-    body.push('<path d="M58 45 q5.5 -4 11 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
+    body.push('<path d="M20 38 q7 -5 14 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
+    body.push('<path d="M66 38 q7 -5 14 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
   } else {
-    body.push('<circle cx="37" cy="45" r="3.8" fill="#33220f"/><circle cx="63" cy="45" r="3.8" fill="#33220f"/>')
+    body.push('<circle cx="27" cy="38" r="3.5" fill="#33220f"/><circle cx="73" cy="38" r="3.5" fill="#33220f"/>')
   }
 
-  body.push('<ellipse cx="50" cy="62" rx="7" ry="4.5" fill="#4a3421"/>')
-  body.push('<path d="M50 66.5 v3 M50 69.5 q-5 5 -9 1 M50 69.5 q5 5 9 1" stroke="#4a3421" stroke-width="2" fill="none" stroke-linecap="round"/>')
+  // 코 — 작은 타원이 아니라 주둥이 위쪽을 가로지르는 넓은 띠
+  body.push('<rect x="39" y="50" width="22" height="6" rx="3" fill="#4a3421"/>')
+  body.push('<path d="M50 57 v3 M50 60 q-5 4 -9 1 M50 60 q5 4 9 1" stroke="#4a3421" stroke-width="2" fill="none" stroke-linecap="round"/>')
 
   if (t >= 2) body.push(EARLY[s.early])
   if (t >= 4) body.push(NECK[s.neck])
