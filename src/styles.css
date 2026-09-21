@@ -126,9 +126,20 @@ input:focus-visible,
 /* =========================================================================
    숫자판 — 클레이 처리 대상(버튼류). 44px 은 이미 넘는다.
    ========================================================================= */
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-8); max-width: 240px; margin: var(--sp-16) auto 0; }
+.keypad {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-8);
+  /* 240px 는 목표 폭이지 상한이 아니다 — flex 조상 안에서 shrink-to-fit 되어
+     키가 40px 까지 좁아지던 문제(2026-09-21 검수)가 있었다. width 를 명시해
+     "채울 수 있으면 채운다"는 의도가 항상 지켜지게 한다. */
+  width: 240px;
+  max-width: 100%;
+  flex: 0 0 auto;
+  margin: var(--sp-16) auto 0;
+}
 .keypad button {
-  height: 52px; font-size: var(--fs-20); font-weight: 600;
+  aspect-ratio: 1;
+  min-width: 48px; min-height: 48px;
+  font-size: var(--fs-20); font-weight: 600;
   border: var(--border-w) solid var(--line); border-radius: var(--radius-md);
   background: var(--card); color: var(--ink);
   box-shadow: var(--shadow-inset), var(--shadow-outer-sm);
@@ -166,12 +177,13 @@ input:focus-visible,
 .quiz-message { text-align: center; min-height: 24px; color: var(--accent-text); font-size: var(--fs-14); font-weight: 700; margin-bottom: var(--sp-8); }
 
 .quiz-board { display: flex; flex-direction: column; align-items: center; gap: var(--sp-16); max-width: 100%; }
+/* #pad 는 키패드 wrapper — 어느 배치에서도 줄어들지 않는다 */
+.quiz-board #pad { flex: 0 0 auto; max-width: 100%; }
 .quiz-grid, .explain-grid { margin: var(--sp-8) 0; width: 100%; overflow-x: auto; }
 
 @media (min-width: 768px) {
   .quiz-board { flex-direction: row; align-items: flex-start; justify-content: center; gap: var(--sp-32); }
   .quiz-grid { margin: var(--sp-8) 0; width: auto; flex: 0 1 auto; }
-  .quiz-board #pad { flex: 0 0 auto; }
   .keypad { margin-top: var(--sp-8); }
 }
 

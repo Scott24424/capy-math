@@ -137,3 +137,37 @@ Playwright로 직접 렌더링해 확인했다.
   keypad+grid 세로→가로), 기록실(표, 불꽃 아이콘, 잠긴 카피바라 자리) 육안 확인.
 - 스타일시트에 `:root` 밖 원시 hex 없음(`grep` 로 확인), `url(http...)`/`@import`/CDN
   없음(`grep` 로 확인).
+
+## 후속 수정 (같은 날, 코디네이터 검수 반영)
+
+Chrome 에서 768×1024 로 직접 재본 결과, 숫자판이 `.quiz-board`(flex) 안에서
+shrink-to-fit 되어 버튼이 40×52px 까지 눌린 문제가 지적됐다 — `#pad`/`.keypad` 가
+`width:auto`(또는 `max-width`만 있는) 상태로 flex item 안에 있으면, 브라우저가
+grid의 내재 크기(max-content)로 좁혀버려 의도한 240px 에 닿지 못했다. 375px 에서도
+같은 문제가 있었다(세로 배치라도 `align-items:center` 이면 폭은 fit-content 로 계산됨).
+
+- `.keypad` 에 `width:240px`(고정, `max-width:100%` 로 극단적으로 좁은 경우만 방어)과
+  `flex:0 0 auto` 를 줘서 shrink 되지 않게 했다.
+- `.keypad button` 을 `height:52px` 고정 대신 `aspect-ratio:1` + `min-width/min-height:48px` 로
+  바꿔, 커진 폭에 맞춰 키가 정사각형으로 자라게 했다(가늘고 긴 대신 통통한 정사각형이
+  손끝에 더 잘 잡힌다).
+- `.quiz-board #pad` 에 `flex:0 0 auto` 를 (768px 미디어 쿼리 안이 아니라) 항상 적용되게
+  옮겼다.
+
+측정 결과:
+
+| 뷰포트 | 배치 | 버튼 크기 |
+|---|---|---|
+| 375px | 세로(스택) | 74.66 × 74.66px |
+| 768px | 가로(나란히) | 74.66 × 74.66px |
+
+44px 최소 기준을 요구했던 명세보다도 넉넉하고, 요청받은 48px 최소치도 여유 있게 넘는다.
+
+**320px 확인** (가장 좁은 실사용 폰, 세 자리 × 한 자리에서 실제 올림수 칸(`p0-k1`)이
+나오는 문제로 확인): `document.documentElement.scrollWidth - clientWidth === 0`
+(가로 스크롤 없음), `p0-k1`(올림수)과 `p0-c1`(그 올림이 들어가는 곱셈 칸)의 중심 x좌표가
+정확히 160.0px 로 소수점까지 일치 — 정렬이 픽셀 단위로 그대로 유지된다. 세로셈 관련
+CSS(`.g-*`, `.g-row*`)는 이번 수정에서 한 줄도 건드리지 않았다(diff로 확인) — 정렬은
+애초에 깨질 수 없는 변경이었다.
+
+`npm test` 240개 재확인, `npm run build` 재확인.
