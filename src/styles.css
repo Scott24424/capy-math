@@ -1,39 +1,108 @@
 :root {
+  /* --- 색: 기존 정체성(크림/오렌지/카피바라 갈색)은 유지하고 대비만 고친다 --- */
   --bg: #fdfaf5;
   --ink: #33220f;
-  --muted: #8a7c6b;
+  --ink-rgb: 51, 34, 15;
+  --ink-soft: #5c503f;
+  --muted: #5f5445;           /* 3.90:1 → 6+:1 로 어둡게 */
   --line: #d9cec0;
-  --accent: #f0912f;
+  --accent: #f0912f;          /* 표면/테두리 전용 — 텍스트로 쓰지 않는다 */
+  --accent-rgb: 240, 145, 47;
+  --accent-light: #f0b64f;
+  --accent-text: #8a4e10;     /* 주황 글자·주황 배경 위 흰 글자 전용 — 새 토큰 */
   --ok: #7cc46a;
   --bad: #e8564f;
+  --bad-text: #c03028;        /* 빨강 글자 전용 — 새 토큰 */
   --card: #ffffff;
+  --white: #ffffff;
   --active-bg: #fffaf2;
   --wrong-bg: #fdf0ef;
+  --track-bg: #eee5d8;
+  --track-bg-2: #e9e0d2;
+  --pill-bg: #f2ede4;
+  --keypad-active-bg: #f7f1e8;
+  --badge-bg: #fff6e8;
+  --badge-border: #f3d7ae;
+  --badge-text: #7a5b2c;
+  --locked-fg: #8f7c66;
+  --locked-bg: #f2ede4;
+
+  /* --- 글자 크기 스케일: 12 / 14 / 16 / 20 / 24 / 32, 아이가 읽는 글자는 14 미만 금지 --- */
+  --fs-12: 12px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-32: 32px;
+
+  /* --- 여백 스케일: 4 / 8 / 12 / 16 / 24 / 32 / 48 --- */
+  --sp-4: 4px;
+  --sp-8: 8px;
+  --sp-12: 12px;
+  --sp-16: 16px;
+  --sp-24: 24px;
+  --sp-32: 32px;
+  --sp-48: 48px;
+
+  /* --- 모양: 클레이모피즘(둥글고 두툼) — 세로셈 입력칸은 예외로 더 작게 --- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --border-w: 3px;
+  --border-w-grid: 2px;
+
+  /* --- 그림자: 은은한 인셋(하이라이트) + 도톰한 아웃셋(입체감) 조합 --- */
+  --shadow-inset: inset 0 2px 0 rgba(255, 255, 255, .55), inset 0 -3px 5px rgba(var(--ink-rgb), .06);
+  --shadow-outer: 0 4px 0 rgba(var(--ink-rgb), .16), 0 10px 18px -6px rgba(var(--ink-rgb), .18);
+  --shadow-outer-sm: 0 3px 0 rgba(var(--ink-rgb), .14), 0 6px 12px -4px rgba(var(--ink-rgb), .14);
+  --shadow-pressed: inset 0 2px 4px rgba(var(--ink-rgb), .18);
+
+  /* --- 동작: 폭신한 눌림 --- */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-press: 180ms;
+
+  color-scheme: light;
 }
+
 * { box-sizing: border-box; }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.5 system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  font: var(--fs-16)/1.5 system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
   -webkit-user-select: none;
   user-select: none;
 }
-#app { max-width: 720px; margin: 0 auto; padding: 16px; }
+#app { max-width: 720px; margin: 0 auto; padding: var(--sp-16); }
 
-.g-row { display: flex; justify-content: center; gap: 4px; }
+/* 초점 링 — 모든 상호작용 요소에 공통으로 보이게 */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--accent-text);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* =========================================================================
+   세로셈 그리드 — 정밀함이 생명인 화면. 클레이 처리는 하지 않고,
+   테두리는 그대로 얇게, 모서리만 살짝(10px) 둥글린다. 정렬 로직은 그대로.
+   ========================================================================= */
+.g-row { display: flex; justify-content: center; gap: var(--sp-4); }
 .g-cell {
-  width: 44px; height: 44px; border-radius: 8px;
+  width: 44px; height: 44px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
-  font: 600 24px/1 ui-monospace, Menlo, monospace;
+  font: 600 var(--fs-24)/1 ui-monospace, Menlo, monospace;
 }
 .g-given { color: var(--ink); }
 .g-empty { }
-.g-input { border: 2px solid var(--line); background: var(--card); }
+.g-input { border: var(--border-w-grid) solid var(--line); background: var(--card); }
 .g-cell.g-symbol { justify-content: flex-end; padding-right: 2px; color: var(--ink); }
 .g-carry {
   width: 30px; height: 30px; margin: 0 7px; font-size: 15px;
-  border: 2px dashed var(--line); background: var(--card);
+  border: var(--border-w-grid) dashed var(--line); background: var(--card);
 }
 /* 줄(row) 종류 클래스는 칸(cell) 클래스와 절대 겹치지 않도록 g-row-- 로 구분한다
    (예: 올림수 줄은 .g-row--carry, 올림수 칸은 .g-carry — g-carry 하나로 겹치던 문제를 막는다). */
@@ -41,7 +110,7 @@ body {
 .g-cell.is-filled { color: var(--ink); }
 .g-cell.is-active {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(240, 145, 47, .22);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .22);
   background: var(--active-bg);
 }
 .g-cell.is-wrong { border-color: var(--bad); background: var(--wrong-bg); animation: shake .3s; }
@@ -50,90 +119,164 @@ body {
   25% { transform: translateX(-5px); }
   75% { transform: translateX(5px); }
 }
-.g-line { height: 3px; background: var(--ink); border-radius: 2px; margin: 4px auto; width: 70%; }
-.g-equation { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 28px; }
+.g-line { height: 3px; background: var(--ink); border-radius: 2px; margin: var(--sp-4) auto; width: 70%; }
+.g-equation { display: flex; align-items: center; justify-content: center; gap: var(--sp-8); font-size: var(--fs-24); }
 .g-equation .g-cell { width: 90px; }
 
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 240px; margin: 20px auto 0; }
+/* =========================================================================
+   숫자판 — 클레이 처리 대상(버튼류). 44px 은 이미 넘는다.
+   ========================================================================= */
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-8); max-width: 240px; margin: var(--sp-16) auto 0; }
 .keypad button {
-  height: 52px; font-size: 22px; font-weight: 600;
-  border: 2px solid var(--line); border-radius: 10px;
+  height: 52px; font-size: var(--fs-20); font-weight: 600;
+  border: var(--border-w) solid var(--line); border-radius: var(--radius-md);
   background: var(--card); color: var(--ink);
+  box-shadow: var(--shadow-inset), var(--shadow-outer-sm);
+  transition: transform var(--dur-press) var(--ease-bounce), box-shadow var(--dur-press) var(--ease-bounce);
+  display: flex; align-items: center; justify-content: center;
 }
-.keypad button:active { background: #f7f1e8; }
+.keypad button:active {
+  background: var(--keypad-active-bg);
+  transform: translateY(2px) scale(.97);
+  box-shadow: var(--shadow-pressed);
+}
+.keypad button svg { display: block; }
 .keypad button.wide { grid-column: span 1; }
 
-.quiz-exit-row { text-align: right; margin-bottom: 8px; }
-.quiz-exit { padding: 6px 14px; font-size: 12px; }
-.quiz-progress { display: flex; gap: 3px; margin-bottom: 14px; }
-.quiz-progress .mark { flex: 1; height: 6px; border-radius: 3px; background: #e9e0d2; }
+/* =========================================================================
+   문제 화면
+   ========================================================================= */
+.quiz-exit-row { text-align: right; margin-bottom: var(--sp-8); }
+.quiz-exit {
+  position: relative;
+  padding: var(--sp-8) var(--sp-16); font-size: var(--fs-14);
+}
+/* 44px 히트영역을 보이지 않게 넓힌다 — 알약 자체 크기는 그대로 둔다 */
+.quiz-exit::after {
+  content: ''; position: absolute; inset: 50% auto auto 50%;
+  width: max(44px, 100%); height: max(44px, 100%);
+  transform: translate(-50%, -50%);
+}
+.quiz-progress { display: flex; gap: 3px; margin-bottom: var(--sp-16); }
+.quiz-progress .mark { flex: 1; height: 6px; border-radius: 3px; background: var(--track-bg-2); }
 .quiz-progress .mark.ok { background: var(--ok); }
 .quiz-progress .mark.bad { background: var(--bad); }
 .quiz-progress .mark.now { background: var(--accent); }
-.quiz-title { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
-.quiz-grid { margin: 10px 0; }
-.quiz-message { text-align: center; min-height: 24px; color: var(--accent); font-size: 14px; }
+.quiz-title { text-align: center; color: var(--muted); font-size: var(--fs-14); margin-bottom: var(--sp-8); }
+.quiz-message { text-align: center; min-height: 24px; color: var(--accent-text); font-size: var(--fs-14); font-weight: 700; margin-bottom: var(--sp-8); }
 
-.explain-title { text-align: center; font-size: 20px; }
-.explain-steps { max-width: 380px; margin: 16px auto; line-height: 1.9; color: #5c503f; }
-.explain-note { text-align: center; color: var(--bad); font-size: 14px; }
+.quiz-board { display: flex; flex-direction: column; align-items: center; gap: var(--sp-16); max-width: 100%; }
+.quiz-grid, .explain-grid { margin: var(--sp-8) 0; width: 100%; overflow-x: auto; }
 
+@media (min-width: 768px) {
+  .quiz-board { flex-direction: row; align-items: flex-start; justify-content: center; gap: var(--sp-32); }
+  .quiz-grid { margin: var(--sp-8) 0; width: auto; flex: 0 1 auto; }
+  .quiz-board #pad { flex: 0 0 auto; }
+  .keypad { margin-top: var(--sp-8); }
+}
+
+.explain-title { text-align: center; font-size: var(--fs-20); }
+.explain-steps { max-width: 380px; margin: var(--sp-16) auto; line-height: 1.9; color: var(--ink-soft); font-size: var(--fs-16); }
+.explain-note { text-align: center; color: var(--bad-text); font-size: var(--fs-14); }
+
+/* =========================================================================
+   버튼 — 클레이: 두꺼운 테두리, 이중 그림자, 통통 튀는 눌림
+   ========================================================================= */
 .btn-primary {
-  display: block; margin: 18px auto 0; padding: 12px 32px;
-  background: var(--accent); color: #fff; border: 0; border-radius: 12px;
-  font-size: 17px; font-weight: 700;
+  display: block; margin: var(--sp-16) auto 0; padding: var(--sp-12) var(--sp-32);
+  background: var(--accent-text); color: var(--white); border: 0; border-radius: var(--radius-md);
+  font-size: var(--fs-16); font-weight: 700;
+  box-shadow: var(--shadow-inset), var(--shadow-outer);
+  transition: transform var(--dur-press) var(--ease-bounce), box-shadow var(--dur-press) var(--ease-bounce);
+  min-height: 44px;
 }
+.btn-primary:active { transform: translateY(2px) scale(.98); box-shadow: var(--shadow-pressed); }
+
 .btn-ghost {
-  padding: 10px 20px; background: var(--card); color: var(--ink);
-  border: 2px solid var(--line); border-radius: 12px; font-size: 15px;
+  padding: var(--sp-8) var(--sp-16); background: var(--card); color: var(--ink);
+  border: var(--border-w) solid var(--line); border-radius: var(--radius-md); font-size: var(--fs-16);
+  box-shadow: var(--shadow-inset), var(--shadow-outer-sm);
+  transition: transform var(--dur-press) var(--ease-bounce), box-shadow var(--dur-press) var(--ease-bounce);
+  min-height: 44px;
 }
+.btn-ghost:active { transform: translateY(2px) scale(.98); box-shadow: var(--shadow-pressed); }
 
-.home-hero { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 16px; }
-.home-hero-text { flex: 1; }
-.home-name { font-weight: 800; font-size: 17px; }
-.home-need { font-size: 12px; color: var(--muted); }
-.bar { height: 12px; border-radius: 6px; background: #eee5d8; overflow: hidden; margin: 8px 0 4px; }
-.bar i { display: block; height: 100%; background: linear-gradient(90deg, #f0b64f, var(--accent)); }
+/* =========================================================================
+   집 화면
+   ========================================================================= */
+.home-hero {
+  display: flex; align-items: center; gap: var(--sp-16); padding: var(--sp-16);
+  border-radius: var(--radius-lg); border: var(--border-w) solid rgba(var(--ink-rgb), .08);
+  box-shadow: var(--shadow-inset), var(--shadow-outer);
+  flex-wrap: wrap;
+}
+.home-hero-text { flex: 1; min-width: 160px; }
+.home-name { font-weight: 800; font-size: var(--fs-16); }
+.home-need { font-size: var(--fs-14); color: var(--muted); }
+.bar { height: 12px; border-radius: 6px; background: var(--track-bg); overflow: hidden; margin: var(--sp-8) 0 var(--sp-4); }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-light), var(--accent)); }
 
-.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 16px 0; }
+.tiles { display: grid; grid-template-columns: 1fr; gap: var(--sp-12); margin: var(--sp-16) 0; }
+@media (min-width: 480px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+}
 .tile {
-  position: relative; text-align: left; padding: 14px;
-  border: 2px solid var(--line); border-radius: 14px; background: var(--card);
+  position: relative; text-align: left; padding: var(--sp-16);
+  border: var(--border-w) solid var(--line); border-radius: var(--radius-md); background: var(--card);
+  box-shadow: var(--shadow-inset), var(--shadow-outer-sm);
+  transition: transform var(--dur-press) var(--ease-bounce), box-shadow var(--dur-press) var(--ease-bounce);
+  min-height: 44px;
 }
-.tile b { display: block; font-size: 15px; margin-bottom: 4px; }
-.tile span { color: var(--muted); font-size: 13px; }
-.tile.is-recommended { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,145,47,.15); }
+.tile:active { transform: translateY(2px) scale(.98); box-shadow: var(--shadow-pressed); }
+.tile b { display: block; font-size: var(--fs-16); margin-bottom: var(--sp-4); }
+.tile span { color: var(--muted); font-size: var(--fs-14); }
+.tile.is-recommended { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .18), var(--shadow-outer-sm); }
 .tile em {
-  position: absolute; top: 10px; right: 10px; font-style: normal;
-  font-size: 11px; color: var(--accent); font-weight: 700;
+  position: absolute; top: var(--sp-8); right: var(--sp-8); font-style: normal;
+  font-size: var(--fs-14); color: var(--accent-text); font-weight: 700;
 }
 
-.pills { display: flex; gap: 6px; flex-wrap: wrap; }
-.pill { background: #f2ede4; border-radius: 20px; padding: 6px 12px; font-size: 12px; color: #7a6a55; border: 0; }
-.pill-button { cursor: pointer; }
+.pills { display: flex; gap: var(--sp-8); flex-wrap: wrap; align-items: center; }
+.pill {
+  background: var(--pill-bg); border-radius: var(--radius-pill); padding: var(--sp-8) var(--sp-12);
+  font-size: var(--fs-14); color: var(--muted); border: 0;
+  display: inline-flex; align-items: center; gap: var(--sp-4);
+}
+.icon-flame { flex: 0 0 auto; }
+.pill-button { cursor: pointer; position: relative; min-height: 44px; }
+/* 44px 히트영역을 보이지 않게 넓힌다 — 알약 자체 크기는 그대로 둔다 */
+.pill-button::after {
+  content: ''; position: absolute; inset: 50% auto auto 50%;
+  width: max(44px, 100%); height: max(44px, 100%);
+  transform: translate(-50%, -50%);
+}
 
-.result-top { display: flex; gap: 16px; align-items: center; }
-.result-score { font-size: 20px; font-weight: 800; }
-.result-time { font-size: 13px; color: var(--muted); margin: 4px 0 8px; }
-.result-xp { font-size: 13px; color: #c07a22; font-weight: 700; }
-.result-badges { font-size: 13px; color: var(--accent); margin-top: 4px; }
-.result-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+/* =========================================================================
+   결과 화면
+   ========================================================================= */
+.result-top { display: flex; gap: var(--sp-16); align-items: center; flex-wrap: wrap; }
+.result-score { font-size: var(--fs-20); font-weight: 800; }
+.result-time { font-size: var(--fs-14); color: var(--muted); margin: var(--sp-4) 0 var(--sp-8); }
+.result-xp { font-size: var(--fs-14); color: var(--accent-text); font-weight: 700; }
+.result-badges { font-size: var(--fs-14); color: var(--accent-text); margin-top: var(--sp-4); }
+.result-buttons { display: flex; gap: var(--sp-8); justify-content: center; margin-top: var(--sp-16); flex-wrap: wrap; }
 .result-buttons button[disabled] { opacity: .4; }
 
-.capy-grid { display: flex; flex-wrap: wrap; gap: 4px; margin: 12px 0 20px; }
-.capy-slot {
-  width: 52px; text-align: center; font-size: 10px; color: var(--muted);
-  border-radius: 10px; padding: 2px;
-}
+.capy-grid { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin: var(--sp-12) 0 var(--sp-24); }
+.capy-slot { width: 56px; text-align: center; font-size: var(--fs-14); color: var(--muted); border-radius: var(--radius-sm); padding: var(--sp-4) 2px; }
 .capy-slot.is-locked {
-  height: 52px; display: flex; align-items: center; justify-content: center;
-  background: #f2ede4; color: #c9b9a3; font-size: 18px;
+  height: 56px; display: flex; align-items: center; justify-content: center;
+  background: var(--locked-bg); color: var(--locked-fg); font-size: var(--fs-16);
 }
-.records-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.records-table th, .records-table td { padding: 8px 4px; border-bottom: 1px solid var(--line); text-align: left; }
-.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-.badge { background: #fff6e8; border: 1px solid #f3d7ae; color: #7a5b2c; border-radius: 20px; padding: 5px 12px; font-size: 12px; }
-.muted { color: var(--muted); font-size: 13px; }
+.records-table-scroll { overflow-x: auto; max-width: 100%; }
+.records-table { width: 100%; min-width: 320px; border-collapse: collapse; font-size: var(--fs-14); }
+.records-table th, .records-table td { padding: var(--sp-8) var(--sp-4); border-bottom: 1px solid var(--line); text-align: left; }
+.badges { display: flex; flex-wrap: wrap; gap: var(--sp-8); margin-bottom: var(--sp-24); }
+.badge {
+  background: var(--badge-bg); border: 1px solid var(--badge-border); color: var(--badge-text);
+  border-radius: var(--radius-pill); padding: var(--sp-4) var(--sp-12); font-size: var(--fs-14);
+}
+.muted { color: var(--muted); font-size: var(--fs-14); }
 
 .result-capy { position: relative; display: inline-block; line-height: 0; }
 .result-capy.is-level-up .capy { animation: capy-pop .5s ease-out; }
@@ -141,7 +284,7 @@ body {
   position: absolute; font-size: 15px; opacity: 0; pointer-events: none;
   animation: spark-pop .5s ease-out forwards;
 }
-.result-series { font-size: 13px; font-weight: 800; color: var(--accent); margin-top: 4px; }
+.result-series { font-size: var(--fs-14); font-weight: 800; color: var(--accent-text); margin-top: var(--sp-4); }
 
 @keyframes capy-pop {
   0% { transform: scale(1); }
@@ -155,11 +298,54 @@ body {
   100% { opacity: 0; transform: scale(1.05) translateY(-10px); }
 }
 
-.records-streak { color: var(--muted); font-size: 13px; margin: -6px 0 12px; }
+/* 카피바라가 은근히 살아있는 느낌 — 결과/집 화면 카드 안에서만, 살짝 */
+@keyframes capy-idle-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.home-hero .capy,
+.result-capy .capy {
+  animation: capy-idle-bob 3.4s ease-in-out infinite;
+}
+
+.records-streak { color: var(--muted); font-size: var(--fs-14); margin: -6px 0 var(--sp-12); display: flex; align-items: center; gap: var(--sp-4); }
 
 .records-transfer {
-  margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--line);
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: var(--sp-24); padding-top: var(--sp-16); border-top: 1px dashed var(--line);
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8);
 }
 .records-transfer .muted { flex-basis: 100%; margin: 0 0 2px; }
-.records-transfer .btn-ghost { padding: 8px 14px; font-size: 13px; }
+.records-transfer .btn-ghost { padding: var(--sp-8) var(--sp-16); font-size: var(--fs-14); }
+
+/* =========================================================================
+   반응형 — 375 / 768 / 1024 에서 확인. 375 은 위 기본값(모바일 우선)이 곧 정답.
+   ========================================================================= */
+@media (min-width: 768px) {
+  #app { padding: var(--sp-24); }
+  .home-hero { padding: var(--sp-24); }
+}
+@media (min-width: 1024px) {
+  #app { max-width: 760px; }
+}
+
+/* =========================================================================
+   동작 줄이기 — 카피바라 바운스와 레벨업 팝을 끄되, 레벨업은 정적인 상태
+   변화(고리)로 여전히 보이게 한다.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .home-hero .capy,
+  .result-capy .capy {
+    animation: none;
+  }
+  .result-capy.is-level-up .capy { animation: none; }
+  .result-capy.is-level-up {
+    box-shadow: 0 0 0 4px var(--accent-text);
+    border-radius: 50%;
+  }
+}

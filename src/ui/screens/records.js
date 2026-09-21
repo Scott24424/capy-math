@@ -3,6 +3,13 @@ import { BADGES } from '../../core/progress.js'
 import { capybaraSvg, clampLevel } from '../capybara.js'
 import { buildExport, parseImport } from '../../storage.js'
 
+// 연속 출석 옆 🔥 는 숫자 옆의 장식일 뿐이라(글자로 이미 뜻이 다 있다),
+// 다른 화면처럼 코드로 그린 인라인 SVG로 바꾼다.
+const FLAME_ICON =
+  '<svg class="icon-flame" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
+  '<path fill="#f0912f" stroke="#c96a0d" stroke-width=".6" d="M12 2c1.2 3-2.6 4.4-2.6 8.2A3.6 3.6 0 0 0 13 13.8c1.6 0 2.9-1 3.4-2.4.9 1.1 1.4 2.4 1.4 3.8a5.8 5.8 0 0 1-11.6 0C6.2 10 9.6 8 9.6 5.4 9.6 3.8 10.6 2.6 12 2z"/>' +
+  '</svg>'
+
 const DEFAULT_IMPORT_FAILURE_MESSAGE =
   '이 파일은 곱셈 카피바라의 기록 파일이 아니거나, 읽을 수 없어요. 다른 파일을 골라주세요.'
 
@@ -71,12 +78,14 @@ export function renderRecords(container, state, { onBack, onImport }) {
   container.innerHTML = `
     <div class="records">
       <h2>기록실</h2>
-      <p class="records-streak">🔥 연속 출석 ${streakDays}일째</p>
+      <p class="records-streak">${FLAME_ICON} 연속 출석 ${streakDays}일째</p>
       <div class="capy-grid">${capybaras}</div>
-      <table class="records-table">
-        <thead><tr><th>카테고리</th><th>푼 문제</th><th>정확도</th><th>최고 기록</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="records-table-scroll">
+        <table class="records-table">
+          <thead><tr><th>카테고리</th><th>푼 문제</th><th>정확도</th><th>최고 기록</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
       <h3>배지</h3>
       <div class="badges">${badgeHtml}</div>
       <button class="btn-ghost" id="back">집으로</button>

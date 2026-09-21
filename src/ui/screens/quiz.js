@@ -31,9 +31,11 @@ export function renderQuiz(container, session, handlers) {
       </div>
       <div class="quiz-progress" id="progress"></div>
       <div class="quiz-title" id="title"></div>
-      <div class="quiz-grid" id="grid"></div>
       <div class="quiz-message" id="message"></div>
-      <div id="pad"></div>
+      <div class="quiz-board">
+        <div class="quiz-grid" id="grid"></div>
+        <div id="pad"></div>
+      </div>
     </div>`
 
   const results = () => sessionResults(session)

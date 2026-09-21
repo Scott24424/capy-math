@@ -1,5 +1,15 @@
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '←', '0', '✓']
 
+// 지우기(←)/확인(✓) 은 글자가 아니라 컨트롤이다 — 글꼴마다 다르게 그려지는 문자
+// 대신 항상 같은 모양으로 보이는 인라인 SVG를 쓴다. data-key 값("←"/"✓")은
+// 키보드 핸들러·테스트가 그대로 참조하므로 절대 바꾸지 않는다 — 버튼 안에
+// 그려지는 것만 바꾼다.
+const ICONS = {
+  '←': '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7 3 12l6 5"/><path d="M3 12h12a5 5 0 0 0 0-10h-1"/></svg>',
+  '✓': '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6"/></svg>'
+}
+const LABELS = { '←': '지우기', '✓': '확인' }
+
 // 컨테이너 하나에 숫자판이 두 번 붙는 것을 막는다 — 예전 인스턴스가 남아 있으면
 // 키 입력이 두 번 들어가서(예: 다음 칸까지 밀려 채워짐) 아이가 치지 않은
 // 오답으로 채점될 수 있다.
@@ -10,7 +20,9 @@ export function createKeypad(container, { onDigit, onBackspace, onEnter }) {
   if (previous) previous.destroy()
 
   container.innerHTML =
-    `<div class="keypad">${KEYS.map(k => `<button type="button" data-key="${k}">${k}</button>`).join('')}</div>`
+    `<div class="keypad">${KEYS.map(k =>
+      `<button type="button" data-key="${k}"${LABELS[k] ? ` aria-label="${LABELS[k]}"` : ''}>${ICONS[k] ?? k}</button>`
+    ).join('')}</div>`
 
   const press = (key) => {
     if (key === '←') onBackspace()

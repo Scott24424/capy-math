@@ -3,6 +3,13 @@ import { recommendCategory } from '../../core/recommend.js'
 import { xpForLevel, MAX_LEVEL } from '../../core/progress.js'
 import { capybaraSvg, seriesOf, clampLevel } from '../capybara.js'
 
+// 연속 출석 옆 🔥 는 숫자 옆의 장식일 뿐이라(글자로 이미 뜻이 다 있다),
+// 다른 화면처럼 코드로 그린 인라인 SVG로 바꾼다.
+const FLAME_ICON =
+  '<svg class="icon-flame" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
+  '<path fill="#f0912f" stroke="#c96a0d" stroke-width=".6" d="M12 2c1.2 3-2.6 4.4-2.6 8.2A3.6 3.6 0 0 0 13 13.8c1.6 0 2.9-1 3.4-2.4.9 1.1 1.4 2.4 1.4 3.8a5.8 5.8 0 0 1-11.6 0C6.2 10 9.6 8 9.6 5.4 9.6 3.8 10.6 2.6 12 2z"/>' +
+  '</svg>'
+
 const SAMPLE = {
   'times-table': '7 × 8',
   'two-by-one': '47 × 3',
@@ -47,7 +54,7 @@ export function renderHome(container, state, { onStart, onRecords }) {
       </div>
 
       <div class="pills">
-        <span class="pill">🔥 연속 ${streakDays}일째</span>
+        <span class="pill">${FLAME_ICON} 연속 ${streakDays}일째</span>
         <span class="pill">복습 ${reviewCount}문제</span>
         <button class="pill pill-button" id="records">기록실 보기</button>
       </div>
