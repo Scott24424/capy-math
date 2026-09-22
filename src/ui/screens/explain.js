@@ -29,7 +29,8 @@ export function explanationSteps(layout) {
 
 /**
  * 풀이 화면 — 틀린 문제가 끝났을 때만 그린다. 정답이면 이 화면을 거치지 않는다.
- * 여기에는 숫자판이 없다: 아이가 다시 입력할 칸이 없고, "다음 문제" 버튼만 누른다.
+ * 여기에는 숫자판이 없다: 아이가 다시 입력할 칸이 없고, "다음 문제" 버튼(클릭
+ * 또는 엔터)만 누른다.
  */
 export function renderExplain(container, problem, layout, onNext) {
   const filled = Object.fromEntries(layout.cells.map(c => [c.id, c.value]))
@@ -45,5 +46,28 @@ export function renderExplain(container, problem, layout, onNext) {
     </div>`
 
   renderGrid(container.querySelector('#grid'), layout, { filled })
-  container.querySelector('#next').addEventListener('click', onNext, { once: true })
+
+  // "다음 문제"는 클릭과 엔터 두 경로로 모두 갈 수 있다. 버튼에 포커스가 가
+  // 있으면 브라우저가 엔터를 자기 click 으로도 바꿔줄 수 있어(포커스 상태에
+  // 따라 달라짐), next() 를 한 번만 실행되게 감싸 어느 경로로 오든 정확히
+  // onNext 가 한 번만 불리게 한다. 엔터 리스너는 window 에 붙인다 — 숫자판과
+  // 같은 방식이라, 아이가 이 버튼에 포커스를 맞추지 않았어도 동작한다.
+  let done = false
+  const next = () => {
+    if (done) return
+    done = true
+    window.removeEventListener('keydown', onKeydown)
+    onNext()
+  }
+
+  const onKeydown = (e) => {
+    if (e.repeat) return
+    if (e.metaKey || e.ctrlKey || e.altKey) return
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    next()
+  }
+
+  container.querySelector('#next').addEventListener('click', next, { once: true })
+  window.addEventListener('keydown', onKeydown)
 }
