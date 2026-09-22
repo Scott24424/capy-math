@@ -16,8 +16,10 @@ const eul = (n) => (isVowelReading(n) ? '를' : '을')
 
 /**
  * 세로셈 전개를 만든다.
- * cells 는 아이가 입력할 순서대로 나열된다:
- * 곱셈 결과를 먼저 쓰고, 올림수를 그 다음에 위에 쓴다.
+ * cells 는 아이가 입력할 순서대로 나열된다: 한 자리 계산에서 두 자리 수가 나오면
+ * (7×6=42 처럼) 십의 자리(올림칸, 또는 맨 앞자리일 때는 그대로 쓰는 칸)를 먼저,
+ * 일의 자리(그 계산이 원래 있던 칸)를 나중에 입력한다 — "42" 를 읽을 때 4를
+ * 먼저 알고 2를 나중에 쓰는 것과 같은 순서다. 덧셈 줄의 올림도 같은 규칙을 따른다.
  *
  * 칸(cell) 모양: { id, kind, row, col, value, hint }
  * - row 가 가질 수 있는 값: 0부터 시작하는 부분곱 줄 번호 | 'sum'(덧셈 줄) | 'answer'(구구단 답 칸)
@@ -44,7 +46,7 @@ export function buildVertical(a, b) {
       const col = row + j
       const isLast = j === A.length - 1
 
-      rowCells.push({
+      const productCell = {
         id: `p${row}-c${col}`,
         kind: 'product',
         row,
@@ -53,8 +55,10 @@ export function buildVertical(a, b) {
         hint: carry > 0
           ? `${ad} × ${bd} = ${raw}, 올린 ${carry}${eul(carry)} 더하면 ${total}${copula(total)}`
           : `${ad} × ${bd} = ${raw}${copula(raw)}`
-      })
+      }
 
+      // 이 자리 계산에서 두 자리 수가 나오면(nextCarry > 0), 십의 자리(올림 또는
+      // 맨 앞자리라 그대로 쓰는 칸)를 일의 자리보다 먼저 입력한다.
       if (nextCarry > 0 && !isLast) {
         rowCells.push({
           id: `p${row}-k${col + 1}`,
@@ -76,6 +80,8 @@ export function buildVertical(a, b) {
           hint: `${total}의 십의 자리 ${nextCarry}${eul(nextCarry)} 그대로 써요`
         })
       }
+
+      rowCells.push(productCell)
 
       carry = nextCarry
     })
@@ -121,15 +127,17 @@ export function buildVertical(a, b) {
           : `${addends} = ${colSum}${copula(colSum)}`
       }
 
-      sumCells.push({
+      const sumCell = {
         id: `s-c${col}`,
         kind: 'sum',
         row: 'sum',
         col,
         value: digit,
         hint
-      })
+      }
 
+      // 부분곱 줄과 같은 규칙: 이 열의 합에서 올림이 생기면(nextCarry > 0),
+      // 그 올림 칸을 이 열의 합 칸보다 먼저 입력한다.
       if (nextCarry > 0 && col + 1 < width) {
         sumCells.push({
           id: `s-k${col + 1}`,
@@ -140,6 +148,8 @@ export function buildVertical(a, b) {
           hint: `${colSum}의 십의 자리 ${nextCarry}${eul(nextCarry)} 위에 올려 써요`
         })
       }
+
+      sumCells.push(sumCell)
 
       carry = nextCarry
     }

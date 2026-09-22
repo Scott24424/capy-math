@@ -10,22 +10,24 @@ describe('createSession', () => {
   it('첫 문제의 첫 칸에서 시작한다', () => {
     const s = createSession(problems)
     expect(s.index).toBe(0)
-    expect(currentCell(s).id).toBe('p0-c0')
+    // 7×3=21 은 두 자리 수라, 첫 칸은 일의 자리(p0-c0)가 아니라
+    // 십의 자리(올림, p0-k1)다 — 두 자리 결과는 십의 자리부터 입력한다.
+    expect(currentCell(s).id).toBe('p0-k1')
   })
 })
 
 describe('submit', () => {
   it('맞히면 다음 칸으로 넘어간다', () => {
     const s = createSession(problems)
-    const r = submit(s, 1)              // 7×3=21 → 1
+    const r = submit(s, 2)              // 7×3=21 → 십의 자리(올림) 2부터
     expect(r.correct).toBe(true)
     expect(r.problemDone).toBe(false)
-    expect(currentCell(s).kind).toBe('carry')
+    expect(currentCell(s).kind).toBe('product')
   })
 
   it('칸을 다 채우면 문제가 끝난다', () => {
     const s = createSession(problems)
-    for (const v of [1, 2, 4, 1]) submit(s, v)
+    for (const v of [2, 1, 1, 4]) submit(s, v)
     expect(s.index).toBe(1)
     expect(sessionResults(s)[0]).toMatchObject({ problemId: '47x3', correct: true, usedHint: false })
   })
@@ -35,22 +37,22 @@ describe('submit', () => {
     expect(submit(s, 9).reveal).toBe(false)
     const second = submit(s, 8)
     expect(second.reveal).toBe(true)
-    expect(currentCell(s).kind).toBe('carry')
-    expect(s.filled['p0-c0']).toBe(1)     // 정답이 대신 채워졌다
+    expect(currentCell(s).kind).toBe('product')
+    expect(s.filled['p0-k1']).toBe(2)     // 정답(올림 2)이 대신 채워졌다
   })
 
   it('한 칸이라도 공개된 문제는 오답이고 힌트를 쓴 것으로 남는다', () => {
     const s = createSession(problems)
-    submit(s, 9); submit(s, 8)            // 첫 칸 공개
-    for (const v of [2, 4, 1]) submit(s, v)
+    submit(s, 9); submit(s, 8)            // 첫 칸(올림) 공개
+    for (const v of [1, 1, 4]) submit(s, v)
     expect(sessionResults(s)[0]).toMatchObject({ correct: false, usedHint: true })
   })
 
   it('첫 시도에 틀렸다가 두 번째에 맞히면 오답이지만 힌트는 안 쓴 것이다', () => {
     const s = createSession(problems)
     submit(s, 9)
-    submit(s, 1)
-    for (const v of [2, 4, 1]) submit(s, v)
+    submit(s, 2)
+    for (const v of [1, 1, 4]) submit(s, v)
     expect(sessionResults(s)[0]).toMatchObject({ correct: false, usedHint: false })
   })
 
@@ -73,7 +75,7 @@ describe('submit', () => {
 
   it('마지막 문제를 끝내면 세트가 끝난다', () => {
     const s = createSession(problems)
-    for (const v of [1, 2, 4, 1]) submit(s, v)
+    for (const v of [2, 1, 1, 4]) submit(s, v)
     const last = submit(s, 56)
     expect(last.setDone).toBe(true)
     expect(currentCell(s)).toBeNull()
@@ -92,8 +94,8 @@ describe('submit', () => {
   })
 
   it('completedOnly: 아직 끝나지 않은 문제(지금 푸는 중이거나 손도 안 댄 문제)는 뺀다', () => {
-    const s = createSession(problems) // 47x3(2자리x1자리, 칸 4개: 1,2,4,1), 7x8(구구단)
-    for (const v of [1, 2, 4, 1]) submit(s, v)   // 47x3 을 다 끝낸다
+    const s = createSession(problems) // 47x3(2자리x1자리, 칸 4개: 2,1,1,4), 7x8(구구단)
+    for (const v of [2, 1, 1, 4]) submit(s, v)   // 47x3 을 다 끝낸다
     expect(sessionResults(s, { completedOnly: true })).toHaveLength(1)
     expect(sessionResults(s, { completedOnly: true })[0].problemId).toBe('47x3')
     // 옵션을 안 주면(기본값) 여전히 손도 안 댄 두 번째 문제까지 전부 돌려준다 — 기존 동작 유지

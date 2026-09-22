@@ -11,34 +11,55 @@ describe('buildVertical', () => {
     expect(v.product).toBe(1692)
   })
 
-  it('47 × 36 의 칸 순서는 공책에 쓰는 순서와 같다', () => {
+  it('47 × 36 의 칸 순서는 공책에 쓰는 순서와 같다 — 두 자리 수가 나오면 십의 자리(올림)를 먼저 쓴다', () => {
     const v = buildVertical(47, 36)
     expect(v.cells.map(c => [c.kind, c.row, c.col, c.value])).toEqual([
-      ['product', 0, 0, 2],   // 7×6=42 → 2를 쓰고
-      ['carry',   0, 1, 4],   //          4를 올린다
-      ['product', 0, 1, 8],   // 4×6=24+4=28 → 8
-      ['product', 0, 2, 2],   //               2
-      ['product', 1, 1, 1],   // 7×3=21 → 1 (한 자리 왼쪽으로 밀림)
-      ['carry',   1, 2, 2],   //          2를 올린다
-      ['product', 1, 2, 4],   // 4×3=12+2=14 → 4
-      ['product', 1, 3, 1],   //               1
-      ['sum', 'sum', 0, 2],   // 282 + 1410 = 1692
+      ['carry',   0, 1, 4],   // 7×6=42 → 십의 자리 4를 먼저 올리고
+      ['product', 0, 0, 2],   //          일의 자리 2를 쓴다
+      ['product', 0, 2, 2],   // 4×6=24+4=28 → 맨 앞자리 2를 먼저 쓰고
+      ['product', 0, 1, 8],   //               8을 쓴다
+      ['carry',   1, 2, 2],   // 7×3=21 → 2를 먼저 올리고 (한 자리 왼쪽으로 밀림)
+      ['product', 1, 1, 1],   //          1을 쓴다
+      ['product', 1, 3, 1],   // 4×3=12+2=14 → 맨 앞자리 1을 먼저 쓰고
+      ['product', 1, 2, 4],   //               4를 쓴다
+      ['sum', 'sum', 0, 2],   // 282 + 1410 = 1692 (올림이 없어 덧셈 줄은 그대로)
       ['sum', 'sum', 1, 9],
       ['sum', 'sum', 2, 6],
       ['sum', 'sum', 3, 1]
     ])
   })
 
-  it('한 자리 수를 곱할 때는 덧셈 줄이 없다', () => {
+  it('한 자리 수를 곱할 때는 덧셈 줄이 없다 — 여기서도 십의 자리를 먼저 쓴다', () => {
     const v = buildVertical(47, 3)
     expect(v.partials).toHaveLength(1)
     expect(v.sumCells).toHaveLength(0)
     expect(v.cells.map(c => [c.kind, c.col, c.value])).toEqual([
-      ['product', 0, 1],  // 7×3=21 → 1
-      ['carry',   1, 2],  //          2 올림
-      ['product', 1, 4],  // 4×3=12+2=14 → 4
-      ['product', 2, 1]   //               1
+      ['carry',   1, 2],  // 7×3=21 → 2를 먼저 올리고
+      ['product', 0, 1],  //          1을 쓴다
+      ['product', 2, 1],  // 4×3=12+2=14 → 맨 앞자리 1을 먼저 쓰고
+      ['product', 1, 4]   //               4를 쓴다
     ])
+  })
+
+  it('306 × 3 — 6×3=18 처럼 한 자리 곱이 두 자리가 되면, 십의 자리(올림) 1을 먼저 입력하고 일의 자리 8을 나중에 입력한다', () => {
+    const v = buildVertical(306, 3)
+    // 6×3=18: 십의 자리 1(올림) → 일의 자리 8 순서로 입력한다
+    expect(v.cells.slice(0, 2).map(c => [c.kind, c.value])).toEqual([
+      ['carry', 1],
+      ['product', 8]
+    ])
+    expect(v.product).toBe(918)
+  })
+
+  it('800 × 3 — 맨 앞자리 8×3=24 도 마찬가지로 십의 자리 2를 먼저, 일의 자리 4를 나중에 입력한다', () => {
+    const v = buildVertical(800, 3)
+    // 8×3=24 는 맨 앞자리 계산이라 올림칸이 아니라 그대로 쓰는 칸으로 나온다 —
+    // 그래도 순서는 같다: 십의 자리(2)가 먼저, 일의 자리(4)가 나중이다.
+    expect(v.cells.slice(-2).map(c => [c.kind, c.value])).toEqual([
+      ['product', 2],
+      ['product', 4]
+    ])
+    expect(v.product).toBe(2400)
   })
 
   it('40 × 6 — 일의 자리가 0이면 0도 써야 한다', () => {
