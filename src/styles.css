@@ -378,7 +378,7 @@ input:focus-visible,
   font-size: var(--fs-14);
 }
 
-.account { max-width: 420px; margin: 0 auto; }
+.account { max-width: 420px; margin: 0 auto; word-break: keep-all; }
 .account-title { text-align: center; font-size: var(--fs-24); margin: var(--sp-8) 0; }
 .account-lead { text-align: center; color: var(--ink-soft); font-size: var(--fs-16); line-height: 1.6; }
 .account-note { text-align: center; color: var(--muted); font-size: var(--fs-14); }
@@ -396,6 +396,7 @@ input:focus-visible,
 .account-field input {
   min-height: 48px; padding: 0 var(--sp-12); font-size: var(--fs-16); color: var(--ink);
   background: var(--card); border: var(--border-w) solid var(--line); border-radius: var(--radius-sm);
+  -webkit-user-select: text; user-select: text;   /* body 의 user-select: none 을 입력칸에서만 푼다 */
 }
 .account-field input:focus { border-color: var(--accent); outline: none; }
 .account-error { min-height: 1.4em; margin: 0; color: var(--bad-text); font-size: var(--fs-14); font-weight: 700; }

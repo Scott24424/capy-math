@@ -106,7 +106,7 @@ export function renderMergePrompt(container, { level, badges }, { onMerge, onSki
     <div class="account">
       <h2 class="account-title">진도를 합칠까요?</h2>
       <p class="account-lead">이 기기에서 쌓은 진도(Lv.${level}, 배지 ${badges}개)를 계정에 합칠까요?</p>
-      <p class="account-note">합치면 두 진도 중 더 많이 한 쪽이 항목마다 남아요. 줄어드는 건 없어요.</p>
+      <p class="account-note">합쳐도 줄어드는 건 없어요. 레벨·기록·배지마다 더 많이 한 쪽이 남아요.</p>
       <button type="button" id="merge-yes" class="btn-primary">합치기</button>
       <button type="button" id="merge-no" class="btn-ghost account-back">합치지 않기</button>
     </div>`
