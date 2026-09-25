@@ -88,7 +88,7 @@ function merge(saved) {
  * 봉투(버전 등) 자체가 안 맞으면 null. loadState 와 진도 불러오기가 이 한 함수를
  * 같이 써서, "저장에서 읽기"와 "파일에서 불러오기"가 서로 다른 검증을 갖지 않는다.
  */
-function validateState(parsed) {
+export function validateState(parsed) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
   if (parsed.version !== SCHEMA_VERSION) return null
   return merge(parsed)
