@@ -362,6 +362,50 @@ input:focus-visible,
 .records-transfer .btn-ghost { padding: var(--sp-8) var(--sp-16); font-size: var(--fs-14); }
 
 /* =========================================================================
+   계정 — 집 화면 오른쪽 위 영역, 로그인/가입 화면
+   ========================================================================= */
+.account-bar {
+  display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-8);
+  margin-bottom: var(--sp-12); flex-wrap: wrap;
+}
+.account-name {
+  font-size: var(--fs-14); font-weight: 700; color: var(--ink-soft);
+  max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sync-note {
+  margin: 0 0 var(--sp-12); padding: var(--sp-8) var(--sp-12); border-radius: var(--radius-sm);
+  background: var(--badge-bg); border: 1px solid var(--badge-border); color: var(--badge-text);
+  font-size: var(--fs-14);
+}
+
+.account { max-width: 420px; margin: 0 auto; }
+.account-title { text-align: center; font-size: var(--fs-24); margin: var(--sp-8) 0; }
+.account-lead { text-align: center; color: var(--ink-soft); font-size: var(--fs-16); line-height: 1.6; }
+.account-note { text-align: center; color: var(--muted); font-size: var(--fs-14); }
+.account-tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); padding: var(--sp-4);
+  margin: var(--sp-16) 0; background: var(--pill-bg); border-radius: var(--radius-md);
+}
+.account-tab {
+  min-height: 44px; border: 0; border-radius: var(--radius-sm); background: transparent;
+  font-size: var(--fs-16); font-weight: 700; color: var(--muted); cursor: pointer;
+}
+.account-tab.is-active { background: var(--card); color: var(--ink); box-shadow: var(--shadow-outer-sm); }
+.account-form { display: flex; flex-direction: column; gap: var(--sp-12); }
+.account-field { display: flex; flex-direction: column; gap: var(--sp-4); font-size: var(--fs-14); font-weight: 700; color: var(--ink-soft); }
+.account-field input {
+  min-height: 48px; padding: 0 var(--sp-12); font-size: var(--fs-16); color: var(--ink);
+  background: var(--card); border: var(--border-w) solid var(--line); border-radius: var(--radius-sm);
+}
+.account-field input:focus { border-color: var(--accent); outline: none; }
+.account-error { min-height: 1.4em; margin: 0; color: var(--bad-text); font-size: var(--fs-14); font-weight: 700; }
+.account-error:empty { min-height: 0; }
+.account-form .btn-primary { width: 100%; margin-top: 0; }
+.account-form .btn-primary:disabled { opacity: .6; }
+.account .btn-primary { width: 100%; }
+.account-back { display: block; width: 100%; margin-top: var(--sp-12); }
+
+/* =========================================================================
    반응형 — 375 / 768 / 1024 에서 확인. 375 은 위 기본값(모바일 우선)이 곧 정답.
    ========================================================================= */
 @media (min-width: 768px) {

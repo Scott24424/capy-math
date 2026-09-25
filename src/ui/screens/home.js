@@ -2,6 +2,7 @@ import { CATEGORIES, CATEGORY_LABELS } from '../../core/problem.js'
 import { recommendCategory } from '../../core/recommend.js'
 import { xpForLevel, MAX_LEVEL } from '../../core/progress.js'
 import { capybaraSvg, seriesOf, clampLevel } from '../capybara.js'
+import { escapeHtml } from '../escape.js'
 
 // 연속 출석 옆 🔥 는 숫자 옆의 장식일 뿐이라(글자로 이미 뜻이 다 있다),
 // 다른 화면처럼 코드로 그린 인라인 SVG로 바꾼다.
@@ -18,11 +19,35 @@ const SAMPLE = {
 }
 
 /**
+ * 오른쪽 위 계정 영역. view 는 sync.js 의 account.view():
+ * null 이면 서버가 없는 곳(GitHub Pages, 파일로 연 경우)이라 아무것도 그리지 않는다.
+ */
+export function accountBarHtml(view) {
+  if (!view) return ''
+  if (view.kind === 'guest') {
+    return '<div class="account-bar"><button class="pill pill-button" id="account-login">로그인</button></div>'
+  }
+  const name = escapeHtml(view.email.split('@')[0])
+  const note = view.expired
+    ? '<p class="sync-note" role="status">로그인이 끝났어요. 다시 로그인하면 이어서 저장돼요</p>'
+    : view.pending
+      ? '<p class="sync-note" role="status">아직 계정에 저장 안 됐어요 — 인터넷이 되면 자동으로 저장돼요</p>'
+      : ''
+  return `
+    <div class="account-bar">
+      <span class="account-name" title="${escapeHtml(view.email)}">${name}</span>
+      ${view.expired ? '<button class="pill pill-button" id="account-login">다시 로그인</button>' : ''}
+      <button class="pill pill-button" id="account-logout">로그아웃</button>
+    </div>
+    ${note}`
+}
+
+/**
  * 집 화면. 저장된 상태가 일부 깨져 있어도(레벨/경험치/카테고리 값 등이 없거나
  * 이상해도) 화면이 비어버리면 아이가 앱을 다시 시작할 방법이 없으므로,
  * 값마다 안전한 기본값으로 보정해서 그린다.
  */
-export function renderHome(container, state, { onStart, onRecords }) {
+export function renderHome(container, state, { onStart, onRecords, onLogin, onLogout }, accountView = null) {
   const recommended = recommendCategory(state)
   const level = clampLevel(state.level)
   const xp = Number.isFinite(state.xp) ? Math.max(0, state.xp) : 0
@@ -35,6 +60,7 @@ export function renderHome(container, state, { onStart, onRecords }) {
 
   container.innerHTML = `
     <div class="home">
+      ${accountBarHtml(accountView)}
       <div class="home-hero" style="background:${series.bg}">
         ${capybaraSvg(level, 130)}
         <div class="home-hero-text">
@@ -64,4 +90,6 @@ export function renderHome(container, state, { onStart, onRecords }) {
     button.addEventListener('click', () => onStart(button.dataset.category))
   })
   container.querySelector('#records').addEventListener('click', onRecords)
+  container.querySelector('#account-login')?.addEventListener('click', () => onLogin?.())
+  container.querySelector('#account-logout')?.addEventListener('click', () => onLogout?.())
 }

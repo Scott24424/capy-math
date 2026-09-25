@@ -3,12 +3,13 @@ import { addWrong, recordReviewResult, pickForSet } from './core/review.js'
 import { problemXp, setBonus, applyXp, updateStreak, earnedBadges } from './core/progress.js'
 import { summarize } from './core/grading.js'
 import { createSession } from './core/session.js'
-import { loadState, saveState } from './storage.js'
+import { createApi, createAccount } from './sync.js'
 import { renderHome } from './ui/screens/home.js'
 import { renderQuiz } from './ui/screens/quiz.js'
 import { renderExplain } from './ui/screens/explain.js'
 import { renderResult } from './ui/screens/result.js'
 import { renderRecords } from './ui/screens/records.js'
+import { renderAccount, renderMergePrompt } from './ui/screens/account.js'
 
 export const SET_SIZE = 10
 export const MAX_REVIEW_PER_SET = 3
@@ -156,30 +157,67 @@ export function finishSet(prevState, results, elapsedMs, { partial = false } = {
   }
 }
 
-export function startApp(container) {
-  let state = loadState()
+export function startApp(container, { api = createApi(), store = globalThis.localStorage } = {}) {
+  // 지금 보이는 화면. 서버 응답(로그인 확인·저장 완료)이 늦게 와도 집 화면일 때만
+  // 다시 그린다 — 문제를 푸는 도중에 화면이 바뀌면 안 된다.
+  let screen = 'home'
+  const account = createAccount({ api, store, onChange: () => { if (screen === 'home') goHome() } })
   let lastCategory = null
   let lastWrong = []
 
-  const persist = () => { saveState(state) }
+  // 기기에는 바로 저장하고, 계정이면 서버에도 올린다(기다리지 않는다)
+  const persist = (next) => { account.update(next).catch(() => {}) }
 
   const goHome = () => {
-    renderHome(container, state, {
+    screen = 'home'
+    renderHome(container, account.state, {
       onStart: (category) => startSet(category),
-      onRecords: () => renderRecords(container, state, {
-        onBack: goHome,
-        onImport: (newState) => {
-          state = newState
-          persist()
+      onRecords: () => {
+        screen = 'records'
+        renderRecords(container, account.state, {
+          onBack: goHome,
+          onImport: (newState) => {
+            persist(newState)
+            goHome()
+          }
+        })
+      },
+      onLogin: () => openAccount('login'),
+      onLogout: async () => {
+        if (!window.confirm('로그아웃할까요?')) return
+        await account.logout()
+        goHome()
+      }
+    }, account.view())
+  }
+
+  const openAccount = (mode) => {
+    screen = 'account'
+    renderAccount(container, {
+      mode,
+      email: account.view()?.email ?? '',
+      onBack: goHome,
+      onSubmit: async (m, fields) => {
+        const res = await account.signIn(m, fields)
+        if (!res.ok) return res.error
+        const finish = async (mergeGuest) => {
+          await account.finishSignIn({ mergeGuest })
           goHome()
         }
-      })
+        if (res.guest) {
+          renderMergePrompt(container, res.guest, { onMerge: () => finish(true), onSkip: () => finish(false) })
+        } else {
+          await finish(false)
+        }
+        return null
+      }
     })
   }
 
   const startSet = (category, problems = null) => {
+    screen = 'quiz'
     lastCategory = category
-    const session = createSession(problems || buildSet(state, category))
+    const session = createSession(problems || buildSet(account.state, category))
 
     renderQuiz(container, session, {
       onProblemWrong: (problem, layout, resume) => {
@@ -187,10 +225,10 @@ export function startApp(container) {
       },
       onSetDone: (results, elapsedMs) => {
         lastWrong = results.filter(r => !r.correct)
-        const outcome = finishSet(state, results, elapsedMs)
-        state = outcome.state
-        persist()
-        renderResult(container, outcome.summary, outcome.xpInfo, state, {
+        const outcome = finishSet(account.state, results, elapsedMs)
+        persist(outcome.state)
+        screen = 'result'
+        renderResult(container, outcome.summary, outcome.xpInfo, outcome.state, {
           onAgain: () => startSet(lastCategory),
           onReview: () => startSet(lastCategory, lastWrong.map(r => ({
             id: r.problemId, category: r.category, difficulty: r.difficulty,
@@ -205,9 +243,8 @@ export function startApp(container) {
       // partial 세트로 채점한다(최고 기록/만점 보너스/세트 완주 보너스 없이).
       onExit: (results, elapsedMs) => {
         if (results.length > 0) {
-          const outcome = finishSet(state, results, elapsedMs, { partial: true })
-          state = outcome.state
-          persist()
+          const outcome = finishSet(account.state, results, elapsedMs, { partial: true })
+          persist(outcome.state)
         }
         goHome()
       }
@@ -215,4 +252,6 @@ export function startApp(container) {
   }
 
   goHome()
+  account.connect().catch(() => {})
+  globalThis.addEventListener?.('online', () => { account.retry().catch(() => {}) })
 }
