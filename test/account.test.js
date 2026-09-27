@@ -137,6 +137,18 @@ describe('renderAccount', () => {
     expect($(c, 'account-error').textContent).toBe('이메일이나 비밀번호가 맞지 않아요')
   })
 
+  it('처음 화면으로 열면 아래 버튼이 "로그인 없이 하기"이고 탭을 바꿔도 유지된다', async () => {
+    const c = new FakeElement()
+    const onBack = vi.fn()
+    renderAccount(c, { mode: 'login', backLabel: '로그인 없이 하기', onSubmit: vi.fn(), onBack })
+    expect(c.innerHTML).toContain('로그인 없이 하기')
+    expect(c.innerHTML).not.toContain('집으로')
+    await $(c, 'tab-signup').fire('click')
+    expect(c.innerHTML).toContain('로그인 없이 하기')
+    await $(c, 'account-back').fire('click')
+    expect(onBack).toHaveBeenCalled()
+  })
+
   it('뒤로 가기', async () => {
     const c = new FakeElement()
     const onBack = vi.fn()

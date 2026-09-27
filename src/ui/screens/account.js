@@ -38,7 +38,7 @@ const field = (id, label, type, autocomplete, value = '') => `
  * onSubmit(mode, fields) 는 성공하면 null, 실패하면 오류 코드를 돌려주는 Promise.
  * 성공 뒤 다음 화면으로 넘기는 일은 onSubmit 쪽(app.js)이 한다.
  */
-export function renderAccount(container, { mode = 'login', email = '', onSubmit, onBack }) {
+export function renderAccount(container, { mode = 'login', email = '', backLabel = '집으로', onSubmit, onBack }) {
   const isSignup = mode === 'signup'
 
   container.innerHTML = `
@@ -60,7 +60,7 @@ export function renderAccount(container, { mode = 'login', email = '', onSubmit,
         <p id="account-error" class="account-error" role="alert"></p>
         <button type="submit" id="account-submit" class="btn-primary">${isSignup ? '가입하기' : '로그인'}</button>
       </form>
-      <button type="button" id="account-back" class="btn-ghost account-back">집으로</button>
+      <button type="button" id="account-back" class="btn-ghost account-back">${escapeHtml(backLabel)}</button>
     </div>`
 
   const $ = (id) => container.querySelector(`#${id}`)
@@ -68,7 +68,7 @@ export function renderAccount(container, { mode = 'login', email = '', onSubmit,
   const submit = $('account-submit')
   let busy = false
 
-  const switchTo = (next) => renderAccount(container, { mode: next, email: $('account-email').value, onSubmit, onBack })
+  const switchTo = (next) => renderAccount(container, { mode: next, email: $('account-email').value, backLabel, onSubmit, onBack })
   $('tab-login').addEventListener('click', () => { if (!busy && isSignup) switchTo('login') })
   $('tab-signup').addEventListener('click', () => { if (!busy && !isSignup) switchTo('signup') })
   $('account-back').addEventListener('click', () => { if (!busy) onBack() })

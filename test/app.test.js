@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { buildSet, finishSet, today } from '../src/app.js'
+import { buildSet, finishSet, today, firstScreen, STARTUP_WAIT_MS } from '../src/app.js'
 import { defaultState } from '../src/storage.js'
 import { addWrong } from '../src/core/review.js'
 
@@ -273,5 +273,19 @@ describe('today (현지 날짜)', () => {
     if (localYmd(now) !== utcYmd(now)) {
       expect(today()).not.toBe(utcYmd(now))
     }
+  })
+})
+
+describe('firstScreen', () => {
+  it('서버가 있고 로그인 안 했으면 로그인 화면부터', () => {
+    expect(firstScreen({ kind: 'guest' })).toBe('account')
+  })
+  it('로그인한 기기(만료 포함)와 서버가 없는 곳은 집 화면', () => {
+    expect(firstScreen({ kind: 'user', email: 'a@b.co', pending: false, expired: false })).toBe('home')
+    expect(firstScreen({ kind: 'user', email: 'a@b.co', pending: true, expired: true })).toBe('home')
+    expect(firstScreen(null)).toBe('home')
+  })
+  it('서버 확인을 너무 오래 기다리지 않는다', () => {
+    expect(STARTUP_WAIT_MS).toBeLessThanOrEqual(5000)
   })
 })

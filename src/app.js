@@ -157,6 +157,19 @@ export function finishSet(prevState, results, elapsedMs, { partial = false } = {
   }
 }
 
+// 앱을 열 때 서버에 로그인 여부를 묻는 동안 기다리는 최대 시간. 이보다 늦으면
+// 집 화면부터 보여 주고, 응답이 오면 그때 계정 버튼을 그린다.
+export const STARTUP_WAIT_MS = 4000
+
+/**
+ * 앱을 열었을 때 첫 화면. 계정 서버가 있는데 로그인하지 않았으면 로그인 화면부터
+ * 보여 준다("로그인 없이 하기"로 바로 넘어갈 수 있다). 이미 로그인한 기기와
+ * 서버가 없는 곳(GitHub Pages, 파일로 연 경우)은 예전처럼 집 화면.
+ */
+export function firstScreen(view) {
+  return view?.kind === 'guest' ? 'account' : 'home'
+}
+
 export function startApp(container, { api = createApi(), store = globalThis.localStorage } = {}) {
   // 지금 보이는 화면. 서버 응답(로그인 확인·저장 완료)이 늦게 와도 집 화면일 때만
   // 다시 그린다 — 문제를 푸는 도중에 화면이 바뀌면 안 된다.
@@ -191,11 +204,12 @@ export function startApp(container, { api = createApi(), store = globalThis.loca
     }, account.view())
   }
 
-  const openAccount = (mode) => {
+  const openAccount = (mode, { first = false } = {}) => {
     screen = 'account'
     renderAccount(container, {
       mode,
       email: account.view()?.email ?? '',
+      backLabel: first ? '로그인 없이 하기' : '집으로',
       onBack: goHome,
       onSubmit: async (m, fields) => {
         const res = await account.signIn(m, fields)
@@ -251,7 +265,19 @@ export function startApp(container, { api = createApi(), store = globalThis.loca
     })
   }
 
-  goHome()
-  account.connect().catch(() => {})
+  if (account.view()?.kind === 'user') {
+    // 로그인해 둔 기기는 기다릴 것 없이 바로 집 화면(기기에 있는 계정 사본으로)
+    goHome()
+    account.connect().catch(() => {})
+  } else {
+    screen = 'starting'
+    container.innerHTML = '<p class="starting" role="status">불러오는 중…</p>'
+    const wait = new Promise(resolve => setTimeout(resolve, STARTUP_WAIT_MS))
+    Promise.race([account.connect().catch(() => {}), wait]).then(() => {
+      if (screen !== 'starting') return
+      if (firstScreen(account.view()) === 'account') openAccount('login', { first: true })
+      else goHome()
+    })
+  }
   globalThis.addEventListener?.('online', () => { account.retry().catch(() => {}) })
 }
