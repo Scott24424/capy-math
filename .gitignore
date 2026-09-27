@@ -4,3 +4,6 @@ dist/
 .DS_Store
 probe/
 preview/
+
+# 대시보드 캡처 등 개인 스크린샷
+docs/*.png
