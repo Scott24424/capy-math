@@ -67,37 +67,38 @@ export function capybaraSvg(level, size = 120) {
 
   // 몸통과 머리 — 이 안의 요소들은 모두 스케일 그룹 안에서 함께 자란다
   //
-  // 카피바라 vs 곰: 카피바라는 (1) 머리가 둥근 타원이 아니라 각진 사각에 가깝고 옆으로
-  // 넓다, (2) 주둥이가 아래 얼굴 대부분을 차지할 만큼 크고 뭉툭하다, (3) 코가 작은
-  // 점이 아니라 주둥이 위쪽을 가로지르는 넓은 띠다, (4) 눈이 작고 위쪽 양 구석에
-  // 몰려 있다, (5) 귀가 정수리에 얹힌 게 아니라 옆머리에 낮게 붙어 실루엣을 거의
-  // 깨지 않는다. 이 다섯 가지를 순서대로 고쳤다 (2026-09-21 곰 문제 리뷰).
-  body.push('<ellipse cx="50" cy="90" rx="29" ry="15" fill="' + s.dark + '"/>')
-  // 귀 — 작고 둥글며 옆머리에 낮게, 정수리가 아니라
-  body.push(`<circle cx="17" cy="33" r="6.5" fill="${s.dark}"/>`)
-  body.push(`<circle cx="83" cy="33" r="6.5" fill="${s.dark}"/>`)
-  // 머리 — 둥근 타원 대신 옆으로 넓고 윗면이 평평한 각진 사각
-  body.push(`<rect x="14" y="26" width="72" height="48" rx="16" ry="16" fill="${s.body}"/>`)
+  // 카피바라 vs 곰(2026-09-21 리뷰): 머리는 옆으로 넓은 사각, 주둥이는 아래 얼굴을
+  // 채울 만큼 크고, 코는 가로 띠, 눈은 위쪽 양 구석, 귀는 옆머리에 작게.
+  // 그 뼈대는 지키면서 "말랑 인형" 느낌으로 다듬었다(2026-09-27): 머리 모서리를
+  // 더 둥글게 하고 얇은 테두리를 두르고, 점눈에 반짝이, 귀 안쪽 분홍, 늘 있는 볼터치,
+  // ω 입, 몸 아래 작은 발 두 개.
+  body.push(`<ellipse cx="50" cy="89" rx="30" ry="14" fill="${s.dark}"/>`)
+  body.push(`<ellipse cx="37" cy="100" rx="6" ry="3.6" fill="${s.dark}"/><ellipse cx="63" cy="100" rx="6" ry="3.6" fill="${s.dark}"/>`)
+  // 귀 — 작고 옆머리에, 안쪽은 분홍
+  for (const x of [21, 79]) {
+    body.push(`<ellipse cx="${x}" cy="29" rx="6" ry="5.5" fill="${s.dark}"/><ellipse cx="${x}" cy="29.5" rx="2.8" ry="2.4" fill="#e9a3a3"/>`)
+  }
+  // 머리 — 옆으로 넓은 사각을 모서리만 크게 둥글린다
+  body.push(`<rect x="14" y="24" width="72" height="54" rx="25" fill="${s.body}" stroke="${s.dark}" stroke-width="1.4"/>`)
   // 주둥이 — 아래 얼굴 대부분을 채우는 크고 뭉툭한 사각
-  body.push(`<rect x="26" y="48" width="48" height="28" rx="10" ry="10" fill="${s.muzzle}"/>`)
+  body.push(`<rect x="28" y="50" width="44" height="25" rx="12.5" fill="${s.muzzle}"/>`)
+  // 볼터치
+  body.push('<ellipse cx="24" cy="57" rx="5.5" ry="3.3" fill="#ff8fab" opacity=".55"/><ellipse cx="76" cy="57" rx="5.5" ry="3.3" fill="#ff8fab" opacity=".55"/>')
 
-  if (t >= 1) {
-    body.push('<circle cx="24" cy="58" r="5" fill="#ff9eb5" opacity=".5"/>')
-    body.push('<circle cx="76" cy="58" r="5" fill="#ff9eb5" opacity=".5"/>')
-  }
-
-  // 눈 — 작고, 위쪽 양 구석에 몰려 있다 (곰처럼 얼굴 가운데가 아니라).
-  // 5단계부터 느긋한 반달눈
+  // 눈 — 위쪽 양 구석. 반짝이는 점눈, 5단계부터 느긋한 반달눈
   if (t >= 5) {
-    body.push('<path d="M20 38 q7 -5 14 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
-    body.push('<path d="M66 38 q7 -5 14 0" stroke="#33220f" stroke-width="3.4" fill="none" stroke-linecap="round"/>')
+    for (const x of [30, 70]) {
+      body.push(`<path d="M${x - 5} 43 q5 -6 10 0" stroke="#33220f" stroke-width="3" fill="none" stroke-linecap="round"/>`)
+    }
   } else {
-    body.push('<circle cx="27" cy="38" r="3.5" fill="#33220f"/><circle cx="73" cy="38" r="3.5" fill="#33220f"/>')
+    for (const x of [30, 70]) {
+      body.push(`<circle cx="${x}" cy="41" r="4.2" fill="#33220f"/><circle cx="${x + 1.5}" cy="39.4" r="1.5" fill="#fff"/>`)
+    }
   }
 
-  // 코 — 작은 타원이 아니라 주둥이 위쪽을 가로지르는 넓은 띠
-  body.push('<rect x="39" y="50" width="22" height="6" rx="3" fill="#4a3421"/>')
-  body.push('<path d="M50 57 v3 M50 60 q-5 4 -9 1 M50 60 q5 4 9 1" stroke="#4a3421" stroke-width="2" fill="none" stroke-linecap="round"/>')
+  // 코 — 주둥이 위쪽을 가로지르는 띠(작은 광택 포함), 그 아래 ω 입
+  body.push('<rect x="42" y="52" width="16" height="5.5" rx="2.75" fill="#4a3421"/><rect x="45" y="53" width="4" height="1.4" rx=".7" fill="#fff" opacity=".6"/>')
+  body.push('<path d="M44 61 q3 3.5 6 0 q3 3.5 6 0" stroke="#4a3421" stroke-width="1.8" fill="none" stroke-linecap="round"/>')
 
   if (t >= 2) body.push(EARLY[s.early])
   if (t >= 4) body.push(NECK[s.neck])
